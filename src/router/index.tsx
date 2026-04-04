@@ -11,7 +11,6 @@ import { publicRoutes } from './publicRoutes'
 
 // Placeholder dashboard — ganti dengan fitur sesungguhnya nanti
 import { DashboardPage } from '@/pages/DashboardPage'
-import { DashboardLayout } from '@/layouts/DashboardLayout'
 import { PrivateRoute } from './guards/PrivateRoute'
 
 export const router = createBrowserRouter([
@@ -20,22 +19,6 @@ export const router = createBrowserRouter([
 
   // ── Auth routes (Login, Register) ────────────────────────
   ...authRoutes,
-
-  // ── Protected routes (Dashboard, dll) ────────────────────
-  {
-    path: '/dashboard',
-    element: (
-      <PrivateRoute>
-        <DashboardLayout />
-      </PrivateRoute>
-    ),
-    children: [
-      { index: true, element: <DashboardPage /> },
-      // Tambah child route di sini saat fitur baru dibuat
-      // Contoh: { path: 'appointments', element: <AppointmentsPage /> }
-    ],
-  },
-
   // ── Fallback ──────────────────────────────────────────────
   { path: '*', element: <Navigate to="/" replace /> },
 ])

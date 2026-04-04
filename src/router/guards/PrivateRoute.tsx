@@ -14,10 +14,7 @@ interface PrivateRouteProps {
   children: ReactNode
 }
 
-// TODO: Ganti implementasi ini dengan pengecekan auth yang sesungguhnya
-// misal: const { isAuthenticated } = useAuthStore()
 function useIsAuthenticated(): boolean {
-  // Sementara cek dari localStorage
   return Boolean(localStorage.getItem('auth_token'))
 }
 
