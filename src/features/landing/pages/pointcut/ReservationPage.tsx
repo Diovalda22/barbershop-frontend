@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api } from '@/lib/api'
 import styled, { createGlobalStyle } from 'styled-components'
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
@@ -161,22 +160,20 @@ export function ReservationPage() {
 
   // Fetch Capsters & Services
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = () => {
       try {
-        const [cRes, sRes] = await Promise.all([
-          api.get('/capsters?barbershop=pointcut'),
-          api.get('/services?barbershop=pointcut')
-        ]);
-        if (cRes.success) {
-          // Filter only senior capsters as requested
-          const seniors = cRes.data.filter((c: any) => 
-            c.is_senior || 
-            c.specialization?.toLowerCase().includes('senior') ||
-            c.role?.toLowerCase().includes('senior')
-          );
-          setCapsters(seniors);
-        }
-        if (sRes.success) setAddonsData(sRes.data);
+        const cRes = Storage.get<any[]>('capsters', []);
+        const sRes = Storage.get<any[]>('services', []);
+        
+        // Filter only senior capsters as requested
+        const seniors = cRes.filter((c: any) => 
+          c.is_senior || 
+          c.specialization?.toLowerCase().includes('senior') ||
+          c.role?.toLowerCase().includes('senior')
+        );
+        // Jika tidak ada senior, fallback semua capster
+        setCapsters(seniors.length > 0 ? seniors : cRes);
+        setAddonsData(sRes);
       } catch (err) {
         console.error('Failed to fetch data:', err);
       }
@@ -187,12 +184,13 @@ export function ReservationPage() {
   // Sync Locked Slots from Backend
   useEffect(() => {
     if (bookingDate && capster) {
-      const fetchLocks = async () => {
+      const fetchLocks = () => {
         try {
-          const res = await api.get(`/slot-locks?date=${bookingDate}&capster_id=${capster.id}&barbershop=pointcut`);
-          if (res.success) {
-            setLockedSlots(res.data);
-          }
+          const locks = Storage.get<any[]>('lockedSlots', []);
+          const filtered = locks.filter(
+             (l:any) => l.lock_date === bookingDate && l.capster_id === capster.id.toString()
+          );
+          setLockedSlots(filtered);
         } catch (err) {
           console.error('Failed to sync locks:', err);
         }
@@ -208,27 +206,39 @@ export function ReservationPage() {
 
   const toggleAddon=(n:string)=>setAddons(p=>p.includes(n)?p.filter(x=>x!==n):[...p,n])
 
-  const doPaymentSuccess = async () => {
+  const doPaymentSuccess = () => {
     if (!capster || selectedSeat === null || !bookingDate) return
-    const qNum = `${capster.qPrefix || capster.queue_prefix}${selectedSeat}`;
+    const qNum = `${capster.queue_prefix || ''}${selectedSeat}`;
 
     try {
-      const res = await api.post('/bookings', {
-        capster_id: capster.id,
-        service_id: addonsData.find(x => x.name.toLowerCase().includes('haircut'))?.id || addonsData[0]?.id,
+      const allRes = Storage.get<any[]>('reservations', []);
+      const serviceDetail = addonsData.find(x => x.name.toLowerCase().includes('haircut')) || addonsData[0] || { name: 'Haircut', id: 1 };
+      
+      const newOrder = {
+        id: Date.now(),
+        customer_name: customerName,
+        type: 'online',
+        capster: capster,
+        service: serviceDetail,
         booking_date: bookingDate,
-        start_time: '12:00', 
-        slot_number: selectedSeat,
-        notes: `Seat: ${qNum}. Addons: ${addons.join(', ')}`,
-        payment_method: 'midtrans'
-      });
+        start_time: '12:00', // simplified
+        queue_number: qNum,
+        payment: {
+            id: Date.now() + 1,
+            method: 'qris_midtrans',
+            amount: total,
+            status: 'paid'
+        },
+        queue: {
+            id: Date.now() + 2,
+            status: 'waiting' // Initial status
+        },
+        notes: `Addons: ${addons.join(', ')}`
+      };
 
-      if (res.success) {
-        setQueue(res.data.queue_number || qNum);
-        setStep(5);
-      } else {
-        alert('Gagal membuat pesanan: ' + res.message);
-      }
+      Storage.set('reservations', [...allRes, newOrder]);
+      setQueue(qNum);
+      setStep(5);
     } catch (err) {
       console.error('Booking failed:', err);
       alert('Terjadi kesalahan saat membuat pesanan.');

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api } from '@/lib/api'
+import { Storage } from '@/services/storage'
 import styled, { createGlobalStyle, css } from 'styled-components'
 
 /* ── Theme ── */
@@ -199,11 +199,11 @@ export function LandingPage() {
     window.addEventListener('scroll',h);
     h();
 
-    // Fetch capsters from API
-    const fetchCapsters = async () => {
+    // Fetch capsters from Storage
+    const fetchCapsters = () => {
       try {
-        const res = await api.get('/capsters?barbershop=pointcut');
-        if (res.success) setCapsters(res.data);
+        const caps = Storage.get<any[]>('capsters', []);
+        setCapsters(caps);
       } catch (err) {
         console.error('Failed to fetch capsters:', err);
       }

@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Storage } from '@/services/storage';
-import { api } from '@/lib/api';
-import { Save, Plus, Trash2, ShieldCheck, UserPlus, Scissors, Loader2 } from 'lucide-react';
+import { Save, Plus, Trash2, ShieldCheck, UserPlus, Scissors } from 'lucide-react';
 
 const C = {
   primary: '#0F172A',
@@ -135,30 +134,24 @@ export const DataManagePage = () => {
   const [capsters, setCapsters] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const [newCName, setNewCName] = useState('');
   const [newCPrefix, setNewCPrefix] = useState('A');
   const [newSName, setNewSName] = useState('');
   const [newSPrice, setNewSPrice] = useState('');
 
-  const fetchData = async () => {
+  const fetchData = () => {
     try {
       setLoading(true);
-      const [resCapsters, resServices, resSettings] = await Promise.all([
-        api.get('/admin/capsters'),
-        api.get('/admin/services'),
-        api.get('/admin/settings')
-      ]);
-      setCapsters(resCapsters.data || []);
-      setServices(resServices.data || []);
-      setSettings({
-        ...resSettings.data,
-        shopName: resSettings.data.name // Map backend name to frontend shopName
-      });
+      const caps = Storage.get<any[]>('capsters', []);
+      const svcs = Storage.get<any[]>('services', []);
+      const sets = Storage.get<any>('settings', { shopName: 'Barbershop' });
+      
+      setCapsters(caps);
+      setServices(svcs);
+      setSettings(sets);
     } catch (err: any) {
       console.error(err);
-      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -168,52 +161,63 @@ export const DataManagePage = () => {
     fetchData();
   }, []);
 
-  const saveSettings = async () => {
+  const saveSettings = () => {
     try {
-      await api.put('/admin/settings', { ...settings, name: settings.shopName });
+      Storage.set('settings', settings);
       alert('Settings saved successfully!');
     } catch (err: any) {
       alert('Failed to save settings: ' + err.message);
     }
   };
 
-  const addCapster = async () => {
+  const addCapster = () => {
     if (!newCName) return;
     try {
-      const res = await api.post('/admin/capsters', { 
+      const caps = Storage.get<any[]>('capsters', []);
+      const newCap = {
+        id: Date.now().toString(),
         name: newCName, 
         queue_prefix: newCPrefix,
-        specialization: '-', // Required by backend logic often or good default
+        specialization: '-', 
         is_active: true
-      });
-      setCapsters([...capsters, res.data]);
+      };
+      
+      const updated = [...caps, newCap];
+      Storage.set('capsters', updated);
+      setCapsters(updated);
       setNewCName('');
     } catch (err: any) {
       alert('Failed to add personnel: ' + err.message);
     }
   };
 
-  const deleteCapster = async (id: string) => {
+  const deleteCapster = (id: string) => {
     if (!confirm('Hapus kapster ini?')) return;
     try {
-      await api.delete(`/admin/capsters/${id}`);
-      setCapsters(capsters.filter((c: any) => c.id !== id));
+      const caps = Storage.get<any[]>('capsters', []);
+      const updated = caps.filter((c: any) => c.id !== id);
+      Storage.set('capsters', updated);
+      setCapsters(updated);
     } catch (err: any) {
       alert('Failed to delete: ' + err.message);
     }
   };
 
-  const addService = async () => {
+  const addService = () => {
     if (!newSName || !newSPrice) return;
     try {
-      const res = await api.post('/admin/services', { 
+      const svcs = Storage.get<any[]>('services', []);
+      const newSvc = {
+        id: Date.now().toString(),
         name: newSName, 
         price: Number(newSPrice), 
-        duration_minutes: 30, // Default duration
+        duration_minutes: 30,
         description: '-',
         is_active: true
-      });
-      setServices([...services, res.data]);
+      };
+      const updated = [...svcs, newSvc];
+      Storage.set('services', updated);
+      setServices(updated);
       setNewSName('');
       setNewSPrice('');
     } catch (err: any) {
@@ -221,11 +225,13 @@ export const DataManagePage = () => {
     }
   };
 
-  const deleteService = async (id: string) => {
+  const deleteService = (id: string) => {
     if (!confirm('Hapus layanan ini?')) return;
     try {
-      await api.delete(`/admin/services/${id}`);
-      setServices(services.filter((s: any) => s.id !== id));
+      const svcs = Storage.get<any[]>('services', []);
+      const updated = svcs.filter((s: any) => s.id !== id);
+      Storage.set('services', updated);
+      setServices(updated);
     } catch (err: any) {
       alert('Failed to delete: ' + err.message);
     }
@@ -273,7 +279,7 @@ export const DataManagePage = () => {
         </FormRow>
         
         <ListContainer>
-           {loading && <div style={{padding:'48px', textAlign:'center'}}><Loader2 className="animate-spin" style={{margin:'0 auto', color:C.blue}} /></div>}
+           {loading && <div style={{padding:'48px', textAlign:'center'}}><span style={{ fontSize: '14px', color: C.textMuted }}>Memuat Data...</span></div>}
            {!loading && capsters.length === 0 && <div style={{padding:'24px', textAlign:'center', color:C.textMuted}}>No personnel registered.</div>}
            {!loading && capsters.map((c: any) => (
               <ListItem key={c.id}>
@@ -284,11 +290,13 @@ export const DataManagePage = () => {
                  <div style={{display:'flex', gap:'8px'}}>
                     <StatusBtn 
                       $active={!!c.is_active} 
-                      onClick={async () => {
+                      onClick={() => {
                         try {
                           const nextStatus = !c.is_active;
-                          await api.put(`/admin/capsters/${c.id}`, { ...c, is_active: nextStatus });
-                          setCapsters(capsters.map((x:any) => x.id === c.id ? {...x, is_active: nextStatus} : x));
+                          const caps = Storage.get<any[]>('capsters', []);
+                          const updated = caps.map((x:any) => x.id === c.id ? {...x, is_active: nextStatus} : x);
+                          Storage.set('capsters', updated);
+                          setCapsters(updated);
                         } catch (err: any) {
                           alert('Failed to update status: ' + err.message);
                         }
@@ -322,7 +330,7 @@ export const DataManagePage = () => {
         </FormRow>
         
         <ListContainer>
-           {loading && <div style={{padding:'48px', textAlign:'center'}}><Loader2 className="animate-spin" style={{margin:'0 auto', color:C.blue}} /></div>}
+           {loading && <div style={{padding:'48px', textAlign:'center'}}><span style={{ fontSize: '14px', color: C.textMuted }}>Memuat Data...</span></div>}
            {!loading && services.length === 0 && <div style={{padding:'24px', textAlign:'center', color:C.textMuted}}>No services listed.</div>}
            {!loading && services.map((s: any) => (
               <ListItem key={s.id}>

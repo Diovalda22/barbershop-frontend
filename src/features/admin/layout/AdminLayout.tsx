@@ -1,13 +1,12 @@
 import { useEffect, useState, useRef } from 'react';
-import { Outlet, NavLink, useLocation, Navigate } from 'react-router-dom';
+import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { api } from '@/lib/api';
 import { 
   PieChart, CalendarDays, Clock, Wallet, Users, LogOut, Bell
 } from 'lucide-react';
-import { Storage, initAdminStorage } from '@/services/storage';
+import { initAdminStorage } from '@/services/storage';
 
 const C = {
   primary: '#0F172A',
@@ -100,11 +99,11 @@ const NotifPopover = styled.div`
 const ContentScroller = styled.div` flex: 1; overflow-y: auto; padding: 32px; `;
 
 export const AdminLayout = () => {
-  const isAuth = Storage.get('admin_token', false);
   const location = useLocation();
-  const [profile, setProfile] = useState<any>(null);
+  // Data statis — tanpa API call
+  const profile = { name: 'Super Admin', barbershop: 'BarberFlow Staff' };
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [notifs, setNotifs] = useState<any[]>([]);
+  const [notifs] = useState<any[]>([]);
   const [showNotifs, setShowNotifs] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -114,54 +113,20 @@ export const AdminLayout = () => {
     const link: any = document.querySelector("link[rel~='icon']");
     if (link) link.href = '/barberFlow.png';
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-    
-    fetchProfile();
-    fetchNotifications();
-    const notifTimer = setInterval(fetchNotifications, 30000); // Poll every 30s
 
     const handleClickOutside = (e: MouseEvent) => {
       if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) setShowNotifs(false);
     }
     document.addEventListener('mousedown', handleClickOutside);
 
-    return () => { clearInterval(timer); clearInterval(notifTimer); document.removeEventListener('mousedown', handleClickOutside); };
+    return () => { clearInterval(timer); document.removeEventListener('mousedown', handleClickOutside); };
   }, []);
-
-  const fetchProfile = async () => {
-    try {
-      const res = await api.get('/auth/profile');
-      if (res.success) setProfile(res.data);
-    } catch (err) { console.error('Profile fetch failed', err); }
-  };
-
-  const fetchNotifications = async () => {
-    try {
-      const res = await api.get('/notifications');
-      if (res.success) setNotifs(res.data.data || []);
-    } catch (err) { console.error('Notif fetch failed', err); }
-  };
-
-  const markAllRead = async () => {
-    try {
-      await api.put('/notifications/read-all', {});
-      fetchNotifications();
-    } catch (err) { console.error(err); }
-  };
-
-  const markRead = async (id: string) => {
-    try {
-      await api.put(`/notifications/${id}/read`, {});
-      fetchNotifications();
-    } catch (err) { console.error(err); }
-  };
-
-  if (!isAuth && location.pathname !== '/admin/login') return <Navigate to="/admin/login" replace />;
 
   const currentDateText = format(currentTime, 'EEEE, d MMM yyyy', { locale: id });
   const timeText = format(currentTime, 'HH:mm') + ' WIB';
   const unreadCount = notifs.filter(n => !n.read_at).length;
 
-  const handleLogout = () => { if(confirm('Yakin ingin keluar?')) { Storage.remove('admin_token'); window.location.href = '/'; } }
+  const handleLogout = () => { if(confirm('Yakin ingin keluar?')) { window.location.href = '/'; } }
 
   const getPageTitle = (path: string) => {
     if (path === '/admin') return 'Dashboard Overview';
@@ -208,17 +173,9 @@ export const AdminLayout = () => {
               <NotifPopover ref={popoverRef}>
                 <div className="header">
                   <h3>Notifications</h3>
-                  {unreadCount > 0 && <button onClick={markAllRead}>Mark all read</button>}
                 </div>
                 <div className="list">
-                  {notifs.length === 0 && <div style={{padding:'32px', textAlign:'center', fontSize:'12px', color:C.textMuted}}>No notifications</div>}
-                  {notifs.map(n => (
-                    <div key={n.id} className={`item ${!n.read_at ? 'unread' : ''}`} onClick={() => markRead(n.id)}>
-                      <h4>{n.data?.title || 'Notification'}</h4>
-                      <p>{n.data?.message || 'You have a new update.'}</p>
-                      <div className="time">{new Date(n.created_at).toLocaleString()}</div>
-                    </div>
-                  ))}
+                  <div style={{padding:'32px', textAlign:'center', fontSize:'12px', color:C.textMuted}}>No notifications</div>
                 </div>
                 <div className="footer" onClick={() => setShowNotifs(false)}>Close</div>
               </NotifPopover>

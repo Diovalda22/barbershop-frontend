@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import styled from 'styled-components';
-import { api } from '@/lib/api';
-import { Plus, X, Search, Calendar, Loader2, CheckCircle2 } from 'lucide-react';
+import { Storage } from '@/services/storage';
+import { Plus, X, Search, Calendar, CheckCircle2 } from 'lucide-react';
 
 const C = {
   primary: '#0F172A',
@@ -224,14 +224,13 @@ export const ReservationManagePage = () => {
 
   const fetchInitialData = async () => {
     try {
-      const [caps, svcs] = await Promise.all([
-        api.get('/admin/capsters'),
-        api.get('/admin/services')
-      ]);
-      if (caps.success) setCapsters(caps.data);
-      if (svcs.success) setServices(svcs.data);
-      if (caps.data?.length > 0) setFormCapster(caps.data[0].id.toString());
-      if (svcs.data?.length > 0) setFormService(svcs.data[0].id.toString());
+      const caps = Storage.get<any[]>('capsters', []);
+      const svcs = Storage.get<any[]>('services', []);
+      
+      setCapsters(caps);
+      setServices(svcs);
+      if (caps.length > 0) setFormCapster(caps[0].id.toString());
+      if (svcs.length > 0) setFormService(svcs[0].id.toString());
     } catch (err) {
       console.error('Failed to fetch initial data:', err);
     }
@@ -240,8 +239,10 @@ export const ReservationManagePage = () => {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const res = await api.get(`/admin/bookings?date=${dateFilter}`);
-      if (res.success) setData(res.data);
+      const allReservations = Storage.get('reservations', []);
+      // asumsikan format dateFilter "YYYY-MM-DD" dan reservation.booking_date formatnya juga serupa 
+      const filtered = allReservations.filter((r: any) => r.booking_date === dateFilter);
+      setData(filtered);
     } catch (err) {
       console.error('Failed to fetch bookings:', err);
     } finally {
@@ -251,16 +252,15 @@ export const ReservationManagePage = () => {
 
   const updateQueueStatus = async (queueId: number, newStatus: string) => {
     try {
-       let endpoint = `/admin/queue/${queueId}/`;
-       if (newStatus === 'in_service') endpoint += 'call';
-       else if (newStatus === 'done') endpoint += 'done';
-       else if (newStatus === 'skipped') endpoint += 'skip';
-       else return;
-
-       const res = await api.put(endpoint, {});
-       if (res.success) {
-         fetchBookings();
-       }
+       const allRes = Storage.get('reservations', []);
+       const updated = allRes.map((r: any) => {
+         if (r.queue && r.queue.id === queueId) {
+             return { ...r, queue: { ...r.queue, status: newStatus } };
+         }
+         return r;
+       });
+       Storage.set('reservations', updated);
+       fetchBookings();
     } catch (err) {
       console.error('Failed to update queue status:', err);
       alert('Gagal mengupdate status antrean.');
@@ -269,11 +269,16 @@ export const ReservationManagePage = () => {
 
   const confirmPayment = async (paymentId: number) => {
     try {
-      const res = await api.put(`/admin/payments/${paymentId}/confirm`, {});
-      if (res.success) {
-        alert('Pembayaran berhasil dikonfirmasi!');
-        fetchBookings();
-      }
+      const allRes = Storage.get('reservations', []);
+      const updated = allRes.map((r: any) => {
+        if (r.payment && r.payment.id === paymentId) {
+            return { ...r, payment: { ...r.payment, status: 'paid' } };
+        }
+        return r;
+      });
+      Storage.set('reservations', updated);
+      alert('Pembayaran berhasil dikonfirmasi!');
+      fetchBookings();
     } catch (err: any) {
       alert('Gagal konfirmasi pembayaran: ' + err.message);
     }
@@ -284,20 +289,36 @@ export const ReservationManagePage = () => {
     if (!formCapster || !formService || !formCustomer) return alert('Lengkapi data!');
 
     try {
-      const res = await api.post('/admin/bookings', {
-        capster_id: formCapster,
-        service_id: formService,
+      const allRes = Storage.get('reservations', []);
+      
+      const newCapster = capsters.find(c => c.id.toString() === formCapster);
+      const newService = services.find(s => s.id.toString() === formService);
+      
+      const newBooking = {
+        id: Date.now(),
         customer_name: formCustomer,
+        type: 'offline', // asumsi offline
+        capster: newCapster,
+        service: newService,
         booking_date: dateFilter,
         start_time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12: false}),
-        payment_method: formPaymentMethod
-      });
+        queue_number: (newCapster?.queue_prefix || '') + (Math.floor(Math.random() * 10) + 1),
+        payment: {
+            id: Date.now() + 1,
+            method: formPaymentMethod,
+            amount: newService?.price || 0,
+            status: 'unpaid'
+        },
+        queue: {
+            id: Date.now() + 2,
+            status: 'waiting'
+        }
+      };
 
-      if (res.success) {
-        setModalOpen(false);
-        setFormCustomer('');
-        fetchBookings();
-      }
+      Storage.set('reservations', [...allRes, newBooking]);
+      setModalOpen(false);
+      setFormCustomer('');
+      fetchBookings();
     } catch (err) {
       console.error('Failed to add offline booking:', err);
       alert('Gagal menambahkan pesanan.');
@@ -369,7 +390,9 @@ export const ReservationManagePage = () => {
         </TableActionRow>
 
         {loading ? (
-          <div style={{textAlign:'center', padding:'48px'}}><Loader2 className="animate-spin" /></div>
+          <div style={{textAlign:'center', padding:'48px'}}>
+              <span style={{ fontSize: '14px', color: C.textMuted }}>Memuat Data...</span>
+          </div>
         ) : (
           <Table>
             <thead>

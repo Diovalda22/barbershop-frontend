@@ -1,12 +1,11 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import styled from 'styled-components';
-import { api } from '@/lib/api';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement,
   LineElement, BarElement, Title, Tooltip, Legend,
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
-import { ArrowUpRight, TrendingUp, Plus, Users, Wallet, Loader2 } from 'lucide-react';
+import { ArrowUpRight, TrendingUp, Plus, Users, Wallet } from 'lucide-react';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
@@ -118,28 +117,21 @@ const ActionCard = styled.div`
 `;
 
 export const DashboardPage = () => {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  const adminName = "Superadmin"; 
-
-  useEffect(() => {
-    fetchDashboard();
-  }, []);
-
-  const fetchDashboard = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get('/admin/dashboard');
-      if (res.success) {
-        setData(res.data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch dashboard:', err);
-    } finally {
-      setLoading(false);
-    }
+  // Data dummy statis — tanpa API call
+  const data = {
+    today: { revenue: 850000, total_bookings: 12 },
+    queue: { waiting: 3 },
+    month_revenue: 18500000,
+    popular_services: [
+      { service: 'Haircut Senior', count: 45 },
+      { service: 'Haircut Junior', count: 30 },
+      { service: 'Basic Coloring', count: 20 },
+      { service: 'Shaving', count: 15 },
+      { service: 'Reservasi', count: 10 },
+    ]
   };
+
+  const adminName = "Superadmin";
 
   const chartData = useMemo(() => {
     if (!data?.popular_services) return { labels: [], data: [] };
@@ -169,13 +161,6 @@ export const DashboardPage = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-        <Loader2 className="animate-spin" size={48} color="#0F172A" />
-      </div>
-    );
-  }
 
   return (
     <div>

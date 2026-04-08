@@ -200,11 +200,8 @@ export function LoginPage() {
     e.preventDefault()
     setIsLoading(true)
     
-    // Simulations
+    // Simulasi — tanpa API call
     await new Promise(r => setTimeout(r, 1000))
-    localStorage.setItem('customer_token', 'cust-' + Date.now())
-    localStorage.setItem('customer_name', form.email.split('@')[0])
-    
     navigate('/booking')
     setIsLoading(false)
   }

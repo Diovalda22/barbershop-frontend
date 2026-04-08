@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { api } from '@/lib/api';
-import { Calendar, User, ShieldAlert, CheckCircle2, Lock, Loader2 } from 'lucide-react';
+import { Storage } from '@/services/storage';
+import { Calendar, User, ShieldAlert, CheckCircle2, Lock } from 'lucide-react';
 
 const C = {
   primary: '#0F172A',
@@ -131,11 +131,9 @@ export const SlotManagePage = () => {
   const fetchCapsters = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/admin/capsters');
-      if (res.success) {
-        setCapsters(res.data);
-        if (res.data.length > 0) setSelectedCapster(res.data[0].id.toString());
-      }
+      const caps = Storage.get<any[]>('capsters', []);
+      setCapsters(caps);
+      if (caps.length > 0) setSelectedCapster(caps[0].id.toString());
     } catch (err) {
       console.error('Failed to fetch capsters:', err);
     } finally {
@@ -153,10 +151,11 @@ export const SlotManagePage = () => {
 
   const fetchLocks = async () => {
     try {
-      const res = await api.get(`/admin/slot-locks?date=${dateFilter}&capster_id=${selectedCapster}`);
-      if (res.success) {
-        setLockedSlots(res.data);
-      }
+      const locks = Storage.get<any[]>('lockedSlots', []);
+      const filteredLocks = locks.filter(
+        (l: any) => l.lock_date === dateFilter && l.capster_id === selectedCapster
+      );
+      setLockedSlots(filteredLocks);
     } catch (err) {
       console.error('Failed to fetch locks:', err);
     }
@@ -164,14 +163,22 @@ export const SlotManagePage = () => {
 
   const toggleLock = async (num: number) => {
     try {
-      const res = await api.post('/admin/slot-locks/toggle', {
-        capster_id: selectedCapster,
-        lock_date: dateFilter,
-        slot_number: num
-      });
-      if (res.success) {
-        fetchLocks();
+      const locks = Storage.get<any[]>('lockedSlots', []);
+      const index = locks.findIndex(
+        (l: any) => l.lock_date === dateFilter && l.capster_id === selectedCapster && l.slot_number === num
+      );
+      
+      let updatedLocks;
+      if (index !== -1) {
+          // Remove lock
+          updatedLocks = locks.filter((_, i) => i !== index);
+      } else {
+          // Add lock
+          updatedLocks = [...locks, { id: Date.now(), capster_id: selectedCapster, lock_date: dateFilter, slot_number: num }];
       }
+      
+      Storage.set('lockedSlots', updatedLocks);
+      fetchLocks();
     } catch (err) {
       console.error('Failed to toggle lock:', err);
       alert('Gagal mengubah status slot.');
@@ -181,7 +188,7 @@ export const SlotManagePage = () => {
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-        <Loader2 className="animate-spin" size={48} color={C.blue} />
+        <span style={{ fontSize: '14px', color: C.textMuted }}>Memuat...</span>
       </div>
     );
   }

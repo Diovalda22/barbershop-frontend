@@ -2,8 +2,6 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import styled, { createGlobalStyle } from 'styled-components'
 import { LogIn, Lock, Mail, ArrowLeft } from 'lucide-react'
-import { api } from '@/lib/api'
-import { Storage } from '@/services/storage'
 
 const C = {
   red: '#C0392B',
@@ -132,26 +130,10 @@ export function AdminLoginPage() {
     setIsLoading(true)
     setError('')
     
-    try {
-      const res = await api.post('/auth/login', {
-        email: form.email,
-        password: form.password
-      });
-
-      if (res.success && res.data.token) {
-        Storage.set('admin_token', res.data.token);
-        // Ensure customer_token is cleared to avoid context mixing
-        localStorage.removeItem('barber_customer_token');
-        
-        navigate('/admin');
-      } else {
-        setError('Email atau password salah.');
-      }
-    } catch (err: any) {
-      setError(err.message || 'Terjadi kesalahan saat masuk.');
-    } finally {
-      setIsLoading(false);
-    }
+    // Simulasi — tanpa API call
+    await new Promise(r => setTimeout(r, 1000))
+    navigate('/admin')
+    setIsLoading(false)
   }
 
   return (

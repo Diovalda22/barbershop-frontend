@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { api } from '@/lib/api';
+import { Storage } from '@/services/storage';
 import * as XLSX from 'xlsx';
-import { Download, Calculator, TrendingUp, Loader2 } from 'lucide-react';
+import { Download, Calculator, TrendingUp } from 'lucide-react';
 
 const C = {
   primary: '#0F172A',
@@ -152,25 +152,25 @@ export const RevenuePage = () => {
     fetchReport();
   }, [dateMonth]);
 
-  const fetchReport = async () => {
-    try {
-      setLoading(true);
-      const [reportRes, bookingRes] = await Promise.all([
-        api.get(`/admin/reports?period=monthly&date=${dateMonth}`),
-        api.get(`/admin/bookings?date=${dateMonth}-01`) // Simplified for now, backend could provide detailed list in report
-      ]);
-      
-      if (reportRes.success) setReportData(reportRes.data);
-      if (bookingRes.success) {
-          // In a real app, the report would ideally return the list of items
-          // For now, we fetch bookings filtered by the same month start (simplification)
-          setBookings(bookingRes.data.filter((b:any) => b.payment?.status === 'paid'));
-      }
-    } catch (err) {
-      console.error('Failed to fetch report:', err);
-    } finally {
-      setLoading(false);
-    }
+  const fetchReport = () => {
+    setLoading(true);
+    // filter reservations yang periodenya masuk bulan ini dan sudah dibayar 
+    const allReservations = Storage.get<any[]>('reservations', []);
+    
+    const monthlyBookings = allReservations.filter((r: any) => {
+      // asumsi format r.booking_date adalah YYYY-MM-DD
+      return typeof r.booking_date === 'string' && r.booking_date.startsWith(dateMonth) &&
+             r.payment?.status === 'paid';
+    });
+
+    setBookings(monthlyBookings);
+
+    setReportData({
+        total_revenue: monthlyBookings.reduce((sum: number, r: any) => sum + (r.payment?.amount || 0), 0),
+        total_bookings: monthlyBookings.length
+    });
+
+    setLoading(false);
   };
 
   const exportToExcel = () => {
@@ -226,7 +226,9 @@ export const RevenuePage = () => {
         </Toolbar>
 
         {loading ? (
-          <div style={{textAlign:'center', padding:'48px'}}><Loader2 className="animate-spin" /></div>
+          <div style={{textAlign:'center', padding:'48px'}}>
+              <span style={{ fontSize: '14px', color: C.textMuted }}>Memuat Data...</span>
+          </div>
         ) : (
           <Table>
             <thead>
