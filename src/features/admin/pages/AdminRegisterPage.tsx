@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import styled, { createGlobalStyle, keyframes } from 'styled-components'
-import { UserPlus, User, Mail, Lock, ArrowLeft } from 'lucide-react'
+import { UserPlus, ArrowLeft, ShieldCheck, Mail, Lock, User } from 'lucide-react'
 
 const C = {
-  primary: '#1A1A18', 
-  accent: '#C8A96E',  
-  bg: '#F4EDE3',      
-  border: '#E0D8CE',  
-  text: '#1A1A18',
-  textMuted: '#888888',
+  primary: '#0F172A',
+  accent: '#C0392B',
+  blue: '#3B82F6',
+  bg: '#F8FAFC',
+  border: '#E2E8F0',
+  text: '#1E293B',
+  textMuted: '#64748B',
   white: '#FFFFFF'
 };
 
@@ -20,14 +21,14 @@ const fadeIn = keyframes`
 
 const GS = createGlobalStyle`
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'DM Sans', sans-serif; background: ${C.bg}; color: ${C.text}; overflow: hidden; }
+  body { font-family: 'Inter', sans-serif; background: ${C.bg}; color: ${C.text}; overflow: hidden; }
 `;
 
 const PageWrap = styled.div`
   display: flex;
   height: 100vh;
   width: 100vw;
-  background: ${C.white};
+  background: white;
 `;
 
 const HeroSide = styled.div`
@@ -38,45 +39,39 @@ const HeroSide = styled.div`
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  color: ${C.white};
+  color: white;
 
   &::before {
     content: '';
     position: absolute;
     inset: 0;
-    background-image: url('https://images.unsplash.com/photo-1599351473299-d8395e691163?auto=format&fit=crop&q=80');
-    background-size: cover;
-    background-position: center;
-    opacity: 0.3;
+    background: radial-gradient(circle at 70% 70%, rgba(59, 130, 246, 0.15), transparent);
     z-index: 1;
-  }
-
-  .overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to top, rgba(26,26,24,0.9), rgba(200,169,110,0.1));
-    z-index: 2;
   }
 
   .content {
     position: relative;
-    z-index: 3;
+    z-index: 2;
     text-align: center;
     max-width: 480px;
     padding: 40px;
     
-    .logo-badge {
-      font-family: 'Playfair Display', serif;
-      font-size: 24px;
-      color: ${C.accent};
-      margin-bottom: 24px;
-      display: inline-block;
-      letter-spacing: 4px;
-      text-transform: uppercase;
+    .logo-box {
+      width: 80px;
+      height: 80px;
+      background: ${C.blue};
+      border-radius: 20px;
+      margin: 0 auto 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 20px 40px rgba(59, 130, 246, 0.3);
+      
+      img { width: 50px; height: 50px; }
     }
 
-    h1 { font-family: 'Playfair Display', serif; font-size: 48px; font-weight: 700; margin-bottom: 20px; }
-    p { font-size: 18px; color: rgba(255,255,255,0.7); line-height: 1.6; font-weight: 300; }
+    h1 { font-size: 42px; font-weight: 900; letter-spacing: -1.5px; margin-bottom: 16px; }
+    p { font-size: 18px; color: rgba(255,255,255,0.6); line-height: 1.6; }
   }
 
   @media(max-width: 900px) { display: none; }
@@ -90,7 +85,6 @@ const FormSide = styled.div`
   padding: 40px;
   background: ${C.bg};
   position: relative;
-  overflow-y: auto;
 `;
 
 const BackLink = styled(Link)`
@@ -110,14 +104,13 @@ const BackLink = styled(Link)`
 
 const FormCard = styled.div`
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
   animation: ${fadeIn} 0.6s ease-out;
-  padding: 40px 0;
 `;
 
 const Header = styled.div`
   margin-bottom: 40px;
-  h2 { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700; color: ${C.primary}; margin-bottom: 8px; }
+  h2 { font-size: 32px; font-weight: 800; color: ${C.primary}; letter-spacing: -1px; margin-bottom: 8px; }
   p { color: ${C.textMuted}; font-size: 15px; }
 `;
 
@@ -132,28 +125,28 @@ const InputGroup = styled.div`
   flex-direction: column;
   gap: 8px;
   
-  label { font-size: 11px; font-weight: 700; color: ${C.primary}; text-transform: uppercase; letter-spacing: 1.5px; }
+  label { font-size: 13px; font-weight: 700; color: ${C.primary}; text-transform: uppercase; letter-spacing: 0.5px; }
   
   .input-wrap {
     position: relative;
     display: flex;
     align-items: center;
     
-    svg { position: absolute; left: 0; color: ${C.primary}; width: 16px; opacity: 0.3; }
+    svg { position: absolute; left: 16px; color: ${C.textMuted}; width: 18px; }
     
     input {
       width: 100%;
-      padding: 10px 0 10px 28px;
-      background: transparent;
-      border: none;
-      border-bottom: 2px solid ${C.border};
+      padding: 14px 16px 14px 48px;
+      background: white;
+      border: 1px solid ${C.border};
+      border-radius: 14px;
       font-size: 15px;
       color: ${C.text};
-      transition: all 0.3s;
+      transition: all 0.2s;
       outline: none;
       
-      &:focus { border-color: ${C.accent}; }
-      &::placeholder { color: #CCC; }
+      &:focus { border-color: ${C.blue}; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+      &::placeholder { color: ${C.border}; }
     }
   }
 `;
@@ -161,22 +154,21 @@ const InputGroup = styled.div`
 const SubmitBtn = styled.button`
   background: ${C.primary};
   color: white;
-  padding: 18px;
-  border-radius: 4px;
+  padding: 16px;
+  border-radius: 14px;
   border: none;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 2px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
-  transition: all 0.3s;
+  transition: all 0.2s;
   margin-top: 10px;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.1);
 
-  &:hover { background: ${C.accent}; transform: translateY(-2px); }
+  &:hover { transform: translateY(-2px); box-shadow: 0 15px 30px rgba(15, 23, 42, 0.2); }
   &:disabled { opacity: 0.7; cursor: not-allowed; }
 `;
 
@@ -186,24 +178,24 @@ const Footer = styled.div`
   font-size: 14px;
   color: ${C.textMuted};
   
-  a { color: ${C.primary}; font-weight: 700; text-decoration: none; border-bottom: 1px solid ${C.accent}; &:hover { color: ${C.accent}; } }
+  a { color: ${C.blue}; font-weight: 700; text-decoration: none; &:hover { text-decoration: underline; } }
 `;
 
-export function RegisterPage() {
+export function AdminRegisterPage() {
   const navigate = useNavigate()
-  const [form, setForm] = useState({ name: '', email: '', password: '' })
+  const [form, setForm] = useState({ name: '', username: '', password: '' })
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    document.title = "Register - Pointcut Barbershop";
+    document.title = "Admin Registration - BarberFlow";
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    await new Promise(r => setTimeout(r, 1000))
-    alert('Pendaftaran berhasil! Silakan login.')
-    navigate('/login')
+    await new Promise(r => setTimeout(r, 1200))
+    alert('Permintaan pendaftaran berhasil dikirim ke Superadmin.')
+    navigate('/admin/login')
     setIsLoading(false)
   }
 
@@ -212,23 +204,24 @@ export function RegisterPage() {
       <GS />
       <PageWrap>
         <HeroSide>
-          <div className="overlay" />
           <div className="content">
-            <span className="logo-badge">Exclusive Access</span>
-            <h1>Join the Elite Club.</h1>
-            <p>Dapatkan prioritas pemesanan, riwayat grooming, dan penawaran eksklusif hanya untuk member Pointcut.</p>
+            <div className="logo-box">
+              <ShieldCheck size={40} color="white" />
+            </div>
+            <h1>Join the Control Center</h1>
+            <p>Daftarkan akun manajerial baru Anda untuk mulai mengelola barbershop Anda secara profesional.</p>
           </div>
         </HeroSide>
 
         <FormSide>
-          <BackLink to="/login">
-            <ArrowLeft size={18} /> BACK TO LOGIN
+          <BackLink to="/admin/login">
+            <ArrowLeft size={18} /> Back to Login
           </BackLink>
           
           <FormCard>
             <Header>
-              <h2>Create Account</h2>
-              <p>Be part of the grooming revolution.</p>
+              <h2>Create Manager Account</h2>
+              <p>Please fill in the details below to request access.</p>
             </Header>
 
             <Form onSubmit={handleSubmit}>
@@ -247,21 +240,21 @@ export function RegisterPage() {
               </InputGroup>
 
               <InputGroup>
-                <label>Email Address</label>
+                <label>Username / Email</label>
                 <div className="input-wrap">
                   <Mail />
                   <input 
-                    type="email" 
+                    type="text" 
                     required 
-                    value={form.email} 
-                    onChange={e => setForm({...form, email: e.target.value})} 
-                    placeholder="you@example.com" 
+                    value={form.username} 
+                    onChange={e => setForm({...form, username: e.target.value})} 
+                    placeholder="admin@example.com" 
                   />
                 </div>
               </InputGroup>
 
               <InputGroup>
-                <label>Create Password</label>
+                <label>Password</label>
                 <div className="input-wrap">
                   <Lock />
                   <input 
@@ -275,16 +268,16 @@ export function RegisterPage() {
               </InputGroup>
 
               <SubmitBtn type="submit" disabled={isLoading}>
-                {isLoading ? 'Creating Account...' : (
+                {isLoading ? 'Creating Request...' : (
                   <>
-                    Join Pointcut Now <UserPlus size={18} />
+                    <UserPlus size={20} /> Submit Registration
                   </>
                 )}
               </SubmitBtn>
             </Form>
 
             <Footer>
-              Already a member? <Link to="/login">Sign in here</Link>
+              Already have an account? <Link to="/admin/login">Login here</Link>
             </Footer>
           </FormCard>
         </FormSide>

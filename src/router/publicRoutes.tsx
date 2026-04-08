@@ -6,6 +6,9 @@
 import type { RouteObject } from 'react-router-dom'
 import { PublicLayout } from '@/layouts/PublicLayout'
 import { LandingPage } from '@/features/landing/pages/pointcut/LandingPage'
+import { ReservationPage } from '@/features/landing/pages/pointcut/ReservationPage'
+import { CustomerLoginPage } from '@/features/landing/pages/pointcut/CustomerLoginPage'
+import { CustomerRegisterPage } from '@/features/landing/pages/pointcut/CustomerRegisterPage'
 
 export const publicRoutes: RouteObject[] = [
   {
@@ -13,7 +16,9 @@ export const publicRoutes: RouteObject[] = [
     element: <PublicLayout />,
     children: [
       { index: true, element: <LandingPage /> },
-      // Tambah halaman publik lain di sini (misal: /pricing, /about)
+      { path: 'booking', element: <ReservationPage /> },
+      { path: 'user/login', element: <CustomerLoginPage /> },
+      { path: 'user/register', element: <CustomerRegisterPage /> },
     ],
   },
 ]

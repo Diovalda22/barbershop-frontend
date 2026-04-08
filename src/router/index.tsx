@@ -8,10 +8,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { authRoutes } from './authRoutes'
 import { publicRoutes } from './publicRoutes'
-
-// Placeholder dashboard — ganti dengan fitur sesungguhnya nanti
-import { DashboardPage } from '@/pages/DashboardPage'
-import { PrivateRoute } from './guards/PrivateRoute'
+import { adminRoutes } from './adminRoutes'
 
 export const router = createBrowserRouter([
   // ── Public routes (Landing, dsb) ──────────────────────────
@@ -19,6 +16,10 @@ export const router = createBrowserRouter([
 
   // ── Auth routes (Login, Register) ────────────────────────
   ...authRoutes,
+
+  // ── Admin routes ─────────────────────────────────────────
+  ...adminRoutes,
+
   // ── Fallback ──────────────────────────────────────────────
   { path: '*', element: <Navigate to="/" replace /> },
 ])
