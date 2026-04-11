@@ -5,21 +5,17 @@
 //   2. Import dan spread ke dalam children di sini
 // ============================================================
 
-import { createBrowserRouter, Navigate } from 'react-router-dom'
-import { authRoutes } from './authRoutes'
-import { publicRoutes } from './publicRoutes'
-import { adminRoutes } from './adminRoutes'
+import { createBrowserRouter, Navigate } from "react-router-dom";
+import { authRoutes } from "./authRoutes";
+import { publicRoutes } from "./publicRoutes";
+import { adminRoutes } from "./adminRoutes";
 
 export const router = createBrowserRouter([
-  // ── Public routes (Landing, dsb) ──────────────────────────
   ...publicRoutes,
 
-  // ── Auth routes (Login, Register) ────────────────────────
   ...authRoutes,
 
-  // ── Admin routes ─────────────────────────────────────────
   ...adminRoutes,
 
-  // ── Fallback ──────────────────────────────────────────────
-  { path: '*', element: <Navigate to="/" replace /> },
-])
+  { path: "*", element: <Navigate to="/" replace /> },
+]);

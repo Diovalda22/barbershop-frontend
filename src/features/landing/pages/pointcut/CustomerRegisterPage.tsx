@@ -1,95 +1,250 @@
-import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import styled, { createGlobalStyle } from 'styled-components'
-
-const C = {
-  dark: '#1a1a18', dark2: '#2a2520', cream: '#f4ede3', beige: '#ede6db',
-  gold: '#c8a96e', white: '#fff', muted: '#888', text: '#1a1a18',
-  border: '#e0d8ce', fS: "'Playfair Display',serif", fB: "'DM Sans',sans-serif", fO: "'Oswald',sans-serif"
-}
-
-const GS = createGlobalStyle`
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:${C.fB};background:${C.cream};color:${C.text};overflow-x:hidden}
-`
-
-const Wrap = styled.div`min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;background:url('/hero_bg.png') center/cover no-repeat;position:relative;&::before{content:'';position:absolute;inset:0;background:rgba(26,26,24,0.85);z-index:0}`
-const Card = styled.div`width:100%;max-width:400px;background:${C.dark2};padding:40px;border:1px solid rgba(255,255,255,.1);position:relative;z-index:1;text-align:center`
-const Logo = styled.img`height:40px;margin:0 auto 20px`
-const Title = styled.h1`font-family:${C.fS};font-size:28px;color:${C.white};margin-bottom:8px`
-const Sub = styled.p`font-size:13px;color:rgba(255,255,255,.6);margin-bottom:32px`
-
-const Form = styled.form`display:flex;flex-direction:column;gap:16px;text-align:left`
-const Label = styled.label`font-family:${C.fO};font-size:12px;letter-spacing:1px;text-transform:uppercase;color:${C.gold}`
-const Input = styled.input`width:100%;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.1);padding:14px;color:${C.white};font-family:${C.fB};font-size:14px;outline:none;transition:.2s;&:focus{border-color:${C.gold}}`
-
-const BtnGold = styled.button`background:${C.gold};color:#fff;font-family:${C.fO};font-size:14px;font-weight:600;letter-spacing:2px;text-transform:uppercase;padding:14px;border:none;margin-top:8px;transition:.2s;&:hover{background:#b09558}:disabled{opacity:0.6;cursor:not-allowed}`
-
-const LinkText = styled.p`font-size:13px;color:rgba(255,255,255,.5);margin-top:24px;a{color:${C.gold};text-decoration:none;font-weight:600;&:hover{text-decoration:underline}}`
+import { useAuth } from "@/hooks/useAuth";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 export function CustomerRegisterPage() {
-  const navigate = useNavigate()
-  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' })
-  const [isLoading, setIsLoading] = useState(false)
+  const navigate = useNavigate();
+  const { register, isLoading } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
 
-  // Ensure fonts exist for auth page
   useEffect(() => {
-    const id = 'pc-f'; if (document.getElementById(id)) return;
-    const l = document.createElement('link'); l.id = id; l.rel = 'stylesheet';
-    l.href = 'https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@400;500&display=swap';
+    const id = "pc-f";
+    if (document.getElementById(id)) return;
+    const l = document.createElement("link");
+    l.id = id;
+    l.rel = "stylesheet";
+    l.href =
+      "https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@400;500&display=swap";
     document.head.appendChild(l);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    
-    // Simulate register
-    await new Promise(r => setTimeout(r, 800))
-    // Automatically log them in after registration (or prompt them to login)
-    localStorage.setItem('customer_token', 'user-token-123')
-    localStorage.setItem('customer_name', form.name || 'Pelanggan')
-    
-    navigate('/booking')
-
-    setIsLoading(false)
-  }
+    e.preventDefault();
+    setError("");
+    try {
+      await register({ email, password, password_confirmation: password, name, phone });
+      navigate("/booking");
+    } catch (err) {
+      console.log(err);
+      setError("Registrasi gagal. Email mungkin sudah terdaftar.");
+    }
+  };
 
   return (
     <>
-      <GS />
-      <Wrap>
-        <Card>
-          <Link to="/">
-            <Logo src="/logopointcut.png" alt="Pointcut" />
-          </Link>
-          <Title>Join Pointcut</Title>
-          <Sub>Buat akun untuk mulai mengatur reservasi Anda</Sub>
-          
-          <Form onSubmit={handleSubmit}>
-            <div>
-              <Label htmlFor="name">Nama Lengkap</Label>
-              <Input id="name" type="text" required value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Budi Santoso" />
-            </div>
-            <div>
-              <Label htmlFor="phone">Nomor WhatsApp</Label>
-              <Input id="phone" type="text" required value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="0812..." />
-            </div>
-            <div>
-              <Label htmlFor="email">Email Address</Label>
-              <Input id="email" type="email" required value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="email@example.com" />
-            </div>
-            <div>
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" required value={form.password} onChange={e => setForm({...form, password: e.target.value})} placeholder="••••••••" />
-            </div>
-            <BtnGold type="submit" disabled={isLoading}>{isLoading ? 'Memproses...' : 'BUAT AKUN'}</BtnGold>
-          </Form>
+      <style>{`
+        body { margin: 0; padding: 0; box-sizing: border-box; overflow-x: hidden; }
+        *, *::before, *::after { box-sizing: border-box; }
+        .font-serif-display { font-family: 'Playfair Display', serif; }
+        .font-oswald { font-family: 'Oswald', sans-serif; }
+        .font-dm { font-family: 'DM Sans', sans-serif; }
+        .input-gold:focus { border-color: #c8a96e !important; outline: none; }
+        .btn-gold:hover { background: #b09558 !important; }
+        .btn-gold:disabled { opacity: 0.6; cursor: not-allowed; }
+      `}</style>
 
-          <LinkText>Sudah punya akun? <Link to="/user/login">Login di sini</Link></LinkText>
-          <LinkText style={{marginTop:'8px'}}><Link to="/">← Kembali ke Beranda</Link></LinkText>
-        </Card>
-      </Wrap>
+      {/* Wrap */}
+      <div
+        className="min-h-screen flex items-center justify-center px-5 py-10 relative"
+        style={{ background: "url('/hero_bg.png') center/cover no-repeat" }}
+      >
+        {/* Overlay */}
+        <div
+          className="absolute inset-0 z-0"
+          style={{ background: "rgba(26,26,24,0.85)" }}
+        />
+
+        {/* Card */}
+        <div
+          className="w-full max-w-sm relative z-10 text-center p-10 border font-dm"
+          style={{
+            background: "#2a2520",
+            borderColor: "rgba(255,255,255,0.1)",
+          }}
+        >
+          {/* Logo */}
+          <Link to="/">
+            <img
+              src="/logopointcut.png"
+              alt="Pointcut"
+              className="h-10 mx-auto mb-5"
+            />
+          </Link>
+
+          {/* Title */}
+          <h1
+            className="font-serif-display text-white mb-2"
+            style={{ fontSize: "28px" }}
+          >
+            Join Pointcut
+          </h1>
+
+          {/* Subtitle */}
+          <p
+            className="mb-8"
+            style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)" }}
+          >
+            Buat akun untuk mulai mengatur reservasi Anda
+          </p>
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/50 rounded text-red-500 text-xs text-left">
+              {error}
+            </div>
+          )}
+
+          {/* Form */}
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-col gap-4 text-left"
+          >
+            {/* Nama */}
+            <div>
+              <label
+                htmlFor="name"
+                className="block font-oswald text-xs uppercase mb-1"
+                style={{ color: "#c8a96e", letterSpacing: "1px" }}
+              >
+                Nama Lengkap
+              </label>
+              <input
+                id="name"
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Budi Santoso"
+                className="input-gold w-full px-4 py-3.5 text-white text-sm border transition-colors duration-200 font-dm"
+                style={{
+                  background: "rgba(0,0,0,0.2)",
+                  borderColor: "rgba(255,255,255,0.1)",
+                  fontSize: "14px",
+                }}
+              />
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label
+                htmlFor="phone"
+                className="block font-oswald text-xs uppercase mb-1"
+                style={{ color: "#c8a96e", letterSpacing: "1px" }}
+              >
+                Nomor WhatsApp
+              </label>
+              <input
+                id="phone"
+                type="text"
+                required
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="0812..."
+                className="input-gold w-full px-4 py-3.5 text-white text-sm border transition-colors duration-200 font-dm"
+                style={{
+                  background: "rgba(0,0,0,0.2)",
+                  borderColor: "rgba(255,255,255,0.1)",
+                  fontSize: "14px",
+                }}
+              />
+            </div>
+
+            {/* Email */}
+            <div>
+              <label
+                htmlFor="email"
+                className="block font-oswald text-xs uppercase mb-1"
+                style={{ color: "#c8a96e", letterSpacing: "1px" }}
+              >
+                Email Address
+              </label>
+              <input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="email@example.com"
+                className="input-gold w-full px-4 py-3.5 text-white text-sm border transition-colors duration-200 font-dm"
+                style={{
+                  background: "rgba(0,0,0,0.2)",
+                  borderColor: "rgba(255,255,255,0.1)",
+                  fontSize: "14px",
+                }}
+              />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label
+                htmlFor="password"
+                className="block font-oswald text-xs uppercase mb-1"
+                style={{ color: "#c8a96e", letterSpacing: "1px" }}
+              >
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="input-gold w-full px-4 py-3.5 text-white text-sm border transition-colors duration-200 font-dm"
+                style={{
+                  background: "rgba(0,0,0,0.2)",
+                  borderColor: "rgba(255,255,255,0.1)",
+                  fontSize: "14px",
+                }}
+              />
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="btn-gold w-full py-3.5 text-white font-oswald font-semibold uppercase border-none mt-2 transition-colors duration-200 cursor-pointer"
+              style={{
+                background: "#c8a96e",
+                fontSize: "14px",
+                letterSpacing: "2px",
+              }}
+            >
+              {isLoading ? "Memproses..." : "BUAT AKUN"}
+            </button>
+          </form>
+
+          {/* Links */}
+          <p
+            className="mt-6 font-dm"
+            style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)" }}
+          >
+            Sudah punya akun?{" "}
+            <Link
+              to="/user/login"
+              className="font-semibold no-underline hover:underline"
+              style={{ color: "#c8a96e" }}
+            >
+              Login di sini
+            </Link>
+          </p>
+          <p
+            className="mt-2 font-dm"
+            style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)" }}
+          >
+            <Link
+              to="/"
+              className="font-semibold no-underline hover:underline"
+              style={{ color: "#c8a96e" }}
+            >
+              ← Kembali ke Beranda
+            </Link>
+          </p>
+        </div>
+      </div>
     </>
-  )
+  );
 }
