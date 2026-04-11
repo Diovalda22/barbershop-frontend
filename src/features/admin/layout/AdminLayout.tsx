@@ -142,7 +142,7 @@ export const AdminLayout = () => {
       <Sidebar>
         <SidebarHeader>
           <div className="logo-box"><img src="/barberFlow.png" alt="Logo" onError={(e:any) => e.target.style.display='none'} /></div>
-          <span>Barber<b>Flow</b></span>
+          <span>Barber<b>ku</b></span>
         </SidebarHeader>
         <NavList>
           <StyledNavLink to="/admin" end><PieChart size={20} /> Dashboard</StyledNavLink>
