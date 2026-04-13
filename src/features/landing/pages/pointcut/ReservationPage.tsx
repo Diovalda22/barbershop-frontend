@@ -20,7 +20,12 @@ const C = {
   fO: "'Oswald',sans-serif",
 };
 
-const MAX_QUEUE = 15;
+const TIME_SLOTS = [
+  "13:30", "14:00", "14:30", "15:00", "15:30", 
+  "16:00", "16:30", "17:00", "17:30", 
+  "18:45", "19:15", "19:45", "20:15", "20:45"
+];
+const MAX_QUEUE = TIME_SLOTS.length;
 const RESERVASI_FEE = 50000;
 
 const getDays = () => {
@@ -28,8 +33,14 @@ const getDays = () => {
   for (let i = 0; i < 7; i++) {
     const t = new Date();
     t.setDate(t.getDate() + i);
+    // Use local-aware YYYY-MM-DD string
+    const year = t.getFullYear();
+    const month = String(t.getMonth() + 1).padStart(2, '0');
+    const day = String(t.getDate()).padStart(2, '0');
+    const localVal = `${year}-${month}-${day}`;
+
     d.push({
-      val: t.toISOString().split("T")[0],
+      val: localVal,
       d: t.toLocaleDateString("id-ID", { weekday: "short" }),
       n: t.getDate(),
       m: t.toLocaleDateString("id-ID", { month: "short" }),
@@ -104,13 +115,29 @@ export function ReservationPage() {
     if (bookingDate && capster) {
       try {
         const locks = Storage.get<any[]>("lockedSlots", []);
-        setLockedSlots(
-          locks.filter(
-            (l: any) =>
-              l.lock_date === bookingDate &&
-              l.capster_id === capster.id.toString(),
-          ),
+        const res = Storage.get<any[]>("reservations", []);
+
+        let locked = locks.filter(
+          (l: any) =>
+            l.lock_date === bookingDate &&
+            l.capster_id === capster.id.toString(),
         );
+
+        const bookedToday = res.filter(
+          (r: any) =>
+            r.booking_date === bookingDate &&
+            r.capster?.id?.toString() === capster.id.toString() &&
+            r.queue?.status !== 'skipped' && r.queue?.status !== 'cancelled'
+        );
+
+        bookedToday.forEach((b: any) => {
+           const numMatch = b.queue_number?.match(/\d+$/);
+           if (numMatch) {
+              locked.push({ slot_number: parseInt(numMatch[0], 10) });
+           }
+        });
+
+        setLockedSlots(locked);
       } catch {}
     }
   }, [bookingDate, capster]);
@@ -150,7 +177,7 @@ export function ReservationPage() {
           capster,
           service: serviceDetail,
           booking_date: bookingDate,
-          start_time: "12:00",
+          start_time: TIME_SLOTS[selectedSeat - 1],
           queue_number: qNum,
           payment: {
             id: Date.now() + 1,
@@ -965,8 +992,9 @@ export function ReservationPage() {
                       lineHeight: 1.6,
                     }}
                   >
-                    Pilih hari, lalu ambil nomor antrian untuk kapster{" "}
-                    <strong>{capster?.name}</strong>.
+                    Pilih hari, lalu ambil nomor antrian yang masih tersedia untuk kapster{" "}
+                    <strong>{capster?.name}</strong>. <br/>
+                    <strong style={{color:C.gold}}>PENTING: Mohon hadir di studio 15 menit sebelum waktu yang dipilih.</strong>
                   </p>
 
                   {/* Date Row */}
@@ -1069,27 +1097,37 @@ export function ReservationPage() {
                           const isLocked = lockedSlots.some(
                             (s: any) => s.slot_number === num,
                           );
+                          
+                          // Auto-lock past slots for today
+                          const now = new Date();
+                          const todayStr = now.toLocaleDateString("en-CA"); // YYYY-MM-DD
+                          const [sH, sM] = TIME_SLOTS[i].split(":").map(Number);
+                          const isPassed = bookingDate === todayStr && (now.getHours() > sH || (now.getHours() === sH && now.getMinutes() >= sM));
+                          
+                          const effectivelyLocked = isLocked || isPassed;
+
                           const cls =
                             selectedSeat === num
                               ? "seat-sel"
-                              : isLocked
+                              : effectivelyLocked
                                 ? "seat-off"
                                 : "seat-avl";
                           return (
                             <button
                               key={num}
-                              className={`font-oswald font-bold flex items-center justify-center rounded-md border-2 transition-all duration-200 ${cls}`}
+                              className={`font-oswald font-bold flex flex-col items-center justify-center rounded-md border-2 transition-all duration-200 ${cls}`}
                               style={{
                                 aspectRatio: "1",
-                                fontSize: "13px",
-                                letterSpacing: "1px",
+                                padding: "4px",
+                                gap: "2px"
                               }}
                               onClick={() => {
-                                if (isLocked) return;
+                                if (effectivelyLocked) return;
                                 setSelectedSeat(num);
                               }}
                             >
-                              {qNumText}
+                              <span style={{ fontSize: "14px", lineHeight: 1 }}>{qNumText}</span>
+                              <span style={{ fontSize: "9px", fontWeight: 500, opacity: 0.8 }}>{TIME_SLOTS[i]}</span>
                             </button>
                           );
                         })}
@@ -1314,7 +1352,7 @@ export function ReservationPage() {
                               style={{ fontSize: "16px" }}
                             >
                               {bookingDate
-                                ? new Date(bookingDate).toLocaleDateString(
+                                ? new Date(bookingDate + "T00:00:00").toLocaleDateString(
                                     "id-ID",
                                     {
                                       day: "numeric",
@@ -1325,6 +1363,14 @@ export function ReservationPage() {
                                 : "-"}
                             </strong>
                           ),
+                        },
+                        {
+                          label: "Waktu",
+                          val: (
+                            <strong className="font-oswald" style={{ fontSize: "16px" }}>
+                              {selectedSeat ? TIME_SLOTS[selectedSeat - 1] : "-"}
+                            </strong>
+                          )
                         },
                         {
                           label: "Kapster",
@@ -1431,7 +1477,7 @@ export function ReservationPage() {
                   {
                     label: "Tanggal",
                     val: bookingDate
-                      ? new Date(bookingDate).toLocaleDateString("id-ID", {
+                      ? new Date(bookingDate + "T00:00:00").toLocaleDateString("id-ID", {
                           weekday: "short",
                           day: "numeric",
                           month: "short",
@@ -1439,6 +1485,15 @@ export function ReservationPage() {
                       : "-",
                   },
                   { label: "Kapster", val: capster?.name || "-" },
+                  { label: "Waktu", val: selectedSeat ? TIME_SLOTS[selectedSeat - 1] : "-" },
+                  { 
+                    label: "Hadir", 
+                    val: (
+                      <span style={{ color: C.gold }}>
+                        {selectedSeat ? "15 Menit Awal" : "-"}
+                      </span>
+                    )
+                  },
                 ].map((r) => (
                   <div
                     key={r.label}

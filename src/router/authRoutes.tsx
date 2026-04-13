@@ -5,15 +5,15 @@
 
 import type { RouteObject } from 'react-router-dom'
 import { AuthLayout } from '@/layouts/AuthLayout'
-import { LoginPage } from '@/features/auth/pages/LoginPage'
-import { RegisterPage } from '@/features/auth/pages/RegisterPage'
+import { CustomerLoginPage } from '@/features/landing/pages/pointcut/CustomerLoginPage'
+import { CustomerRegisterPage } from '@/features/landing/pages/pointcut/CustomerRegisterPage'
 
 export const authRoutes: RouteObject[] = [
   {
     element: <AuthLayout />,
     children: [
-      { path: '/login', element: <LoginPage /> },
-      { path: '/register', element: <RegisterPage /> },
+      { path: '/login', element: <CustomerLoginPage /> },
+      { path: '/register', element: <CustomerRegisterPage /> },
     ],
   },
 ]

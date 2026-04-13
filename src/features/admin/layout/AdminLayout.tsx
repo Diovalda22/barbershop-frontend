@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { 
-  PieChart, CalendarDays, Clock, Wallet, Users, LogOut, Bell
+  PieChart, CalendarDays, Clock, Wallet, Users, LogOut, Bell, Menu, X
 } from 'lucide-react';
 import { initAdminStorage } from '@/services/storage';
 
@@ -24,8 +24,25 @@ const AppContainer = styled.div`
   display: flex; height: 100vh; width: 100vw; background: ${C.bg}; font-family: 'Inter', sans-serif; overflow: hidden;
 `;
 
-const Sidebar = styled.div`
-  width: 260px; background: ${C.sidebarBg}; color: ${C.text}; display: flex; flex-direction: column; z-index: 10; border-right: 1px solid ${C.border};
+const Sidebar = styled.div<{ $isOpen: boolean }>`
+  width: 260px; background: ${C.sidebarBg}; color: ${C.text}; display: flex; flex-direction: column; z-index: 50; border-right: 1px solid ${C.border};
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  @media (max-width: 768px) {
+    position: fixed;
+    height: 100vh;
+    transform: ${p => p.$isOpen ? 'translateX(0)' : 'translateX(-100%)'};
+  }
+`;
+
+const MobileOverlay = styled.div<{ $isOpen: boolean }>`
+  display: none;
+  @media (max-width: 768px) {
+    display: block;
+    position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); z-index: 40;
+    opacity: ${p => p.$isOpen ? 1 : 0};
+    pointer-events: ${p => p.$isOpen ? 'auto' : 'none'};
+    transition: opacity 0.3s;
+  }
 `;
 
 const SidebarHeader = styled.div`
@@ -60,6 +77,14 @@ const MainContainer = styled.div`
 
 const TopBar = styled.header`
   height: 80px; background: white; border-bottom: 1px solid ${C.border}; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; z-index: 5;
+  @media (max-width: 768px) { padding: 0 16px; }
+`;
+
+const MobileMenuBtn = styled.button`
+  display: none;
+  @media (max-width: 768px) {
+    display: flex; align-items: center; justify-content: center; background: none; border: none; color: ${C.text}; cursor: pointer; padding: 8px; margin-right: 8px;
+  }
 `;
 
 const LeftSection = styled.div` display: flex; align-items: center; gap: 16px; `;
@@ -70,11 +95,13 @@ const DateTimeBox = styled.div`
   display: flex; flex-direction: column; align-items: flex-end; gap: 2px; padding: 0 16px; border-right: 1px solid ${C.border};
   .day { font-size: 13px; font-weight: 700; color: ${C.text}; }
   .time { font-size: 11px; font-weight: 800; color: ${C.blue}; letter-spacing: 0.5px; opacity: 0.8; }
+  @media (max-width: 768px) { display: none; }
 `;
 
 const AdminInfo = styled.div`
   display: flex; align-items: center; gap: 10px; margin-left: 8px; cursor: pointer;
   .details { display: flex; flex-direction: column; align-items: flex-start; span { font-size: 13px; font-weight: 700; color: ${C.text}; } small { font-size: 10px; font-weight: 600; color: ${C.textMuted}; text-transform: uppercase; } }
+  @media (max-width: 480px) { .details { display: none; } }
 `;
 
 const IconBtn = styled.button`
@@ -100,11 +127,13 @@ const ContentScroller = styled.div` flex: 1; overflow-y: auto; padding: 32px; `;
 
 export const AdminLayout = () => {
   const location = useLocation();
-  // Data statis — tanpa API call
-  const profile = { name: 'Super Admin', barbershop: 'BarberFlow Staff' };
+  const userStr = localStorage.getItem("admin_user");
+  const user = userStr ? JSON.parse(userStr) : { name: 'Super Admin', role: 'admin' };
+  const profile = { name: user.name, barbershop: user.role === 'kapster' ? 'Pointcut Kapster' : 'Pointcut Staff' };
   const [currentTime, setCurrentTime] = useState(new Date());
   const [notifs] = useState<any[]>([]);
   const [showNotifs, setShowNotifs] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -129,34 +158,41 @@ export const AdminLayout = () => {
   const handleLogout = () => { if(confirm('Yakin ingin keluar?')) { window.location.href = '/'; } }
 
   const getPageTitle = (path: string) => {
-    if (path === '/admin') return 'Dashboard Overview';
-    if (path === '/admin/reservations') return 'Order Management';
-    if (path === '/admin/slots') return 'Schedule Management';
-    if (path === '/admin/revenue') return 'Revenue Analytics';
-    if (path === '/admin/data') return 'Master Data';
-    return 'Admin Panel';
+    if (path === '/admin') return 'Ringkasan Dashboard';
+    if (path === '/admin/reservations') return 'Manajemen Pesanan';
+    if (path === '/admin/slots') return 'Manajemen Jadwal';
+    if (path === '/admin/revenue') return 'Analisis Pendapatan';
+    if (path === '/admin/data') return 'Data Master';
+    return 'Panel Admin';
   }
 
   return (
     <AppContainer>
-      <Sidebar>
+      <MobileOverlay $isOpen={sidebarOpen} onClick={() => setSidebarOpen(false)} />
+      <Sidebar $isOpen={sidebarOpen}>
         <SidebarHeader>
           <div className="logo-box"><img src="/barberFlow.png" alt="Logo" onError={(e:any) => e.target.style.display='none'} /></div>
           <span>Barber<b>ku</b></span>
+          <MobileMenuBtn style={{ marginLeft: 'auto' }} onClick={() => setSidebarOpen(false)}>
+            <X size={20} />
+          </MobileMenuBtn>
         </SidebarHeader>
         <NavList>
-          <StyledNavLink to="/admin" end><PieChart size={20} /> Dashboard</StyledNavLink>
-          <StyledNavLink to="/admin/reservations"><CalendarDays size={20} /> Order List</StyledNavLink>
-          <StyledNavLink to="/admin/slots"><Clock size={20} /> Slot Management</StyledNavLink>
-          <StyledNavLink to="/admin/revenue"><Wallet size={20} /> Revenue</StyledNavLink>
-          <StyledNavLink to="/admin/data"><Users size={20} /> Master Data</StyledNavLink>
+          <StyledNavLink to="/admin" end onClick={() => setSidebarOpen(false)}><PieChart size={20} /> Dashboard</StyledNavLink>
+          <StyledNavLink to="/admin/reservations" onClick={() => setSidebarOpen(false)}><CalendarDays size={20} /> Daftar Pesanan</StyledNavLink>
+          <StyledNavLink to="/admin/slots" onClick={() => setSidebarOpen(false)}><Clock size={20} /> Manajemen Slot</StyledNavLink>
+          <StyledNavLink to="/admin/revenue" onClick={() => setSidebarOpen(false)}><Wallet size={20} /> Pendapatan</StyledNavLink>
+          <StyledNavLink to="/admin/data" onClick={() => setSidebarOpen(false)}><Users size={20} /> Data Master</StyledNavLink>
         </NavList>
-        <LogoutBtn onClick={handleLogout}><LogOut size={20} /> Logout</LogoutBtn>
+        <LogoutBtn onClick={handleLogout}><LogOut size={20} /> Keluar</LogoutBtn>
       </Sidebar>
       
       <MainContainer>
         <TopBar>
-          <LeftSection><PageTitle>{getPageTitle(location.pathname)}</PageTitle></LeftSection>
+          <LeftSection>
+             <MobileMenuBtn onClick={() => setSidebarOpen(true)}><Menu size={24} /></MobileMenuBtn>
+             <PageTitle>{getPageTitle(location.pathname)}</PageTitle>
+          </LeftSection>
           <TopActions>
             <DateTimeBox><div className="day">{currentDateText}</div><div className="time">{timeText}</div></DateTimeBox>
             
@@ -164,7 +200,7 @@ export const AdminLayout = () => {
               className={unreadCount > 0 ? "has-badge" : ""} 
               data-count={unreadCount}
               onClick={() => setShowNotifs(!showNotifs)}
-              title="Notifications"
+              title="Notifikasi"
             >
               <Bell size={20} />
             </IconBtn>
@@ -172,12 +208,12 @@ export const AdminLayout = () => {
             {showNotifs && (
               <NotifPopover ref={popoverRef}>
                 <div className="header">
-                  <h3>Notifications</h3>
+                  <h3>Notifikasi</h3>
                 </div>
                 <div className="list">
-                  <div style={{padding:'32px', textAlign:'center', fontSize:'12px', color:C.textMuted}}>No notifications</div>
+                  <div style={{padding:'32px', textAlign:'center', fontSize:'12px', color:C.textMuted}}>Tidak ada notifikasi</div>
                 </div>
-                <div className="footer" onClick={() => setShowNotifs(false)}>Close</div>
+                <div className="footer" onClick={() => setShowNotifs(false)}>Tutup</div>
               </NotifPopover>
             )}
             

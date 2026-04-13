@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Storage } from '@/services/storage';
-import { Calendar, User, ShieldAlert, CheckCircle2, Lock } from 'lucide-react';
+import { Calendar, ShieldAlert, CheckCircle2, Lock } from 'lucide-react';
 
 const C = {
   primary: '#0F172A',
@@ -113,7 +113,19 @@ const SlotBtn = styled.button<{ $locked: boolean }>`
     font-weight: 700;
     text-transform: uppercase;
   }
+  .time {
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0.8;
+    margin-top: 2px;
+  }
 `;
+
+const TIME_SLOTS = [
+  "13:30", "14:00", "14:30", "15:00", "15:30", 
+  "16:00", "16:30", "17:00", "17:30", 
+  "18:45", "19:15", "19:45", "20:15", "20:45"
+];
 
 export const SlotManagePage = () => {
   const [capsters, setCapsters] = useState<any[]>([]);
@@ -121,8 +133,6 @@ export const SlotManagePage = () => {
   const [lockedSlots, setLockedSlots] = useState<any[]>([]);
   const [dateFilter, setDateFilter] = useState(new Date().toISOString().split('T')[0]);
   const [selectedCapster, setSelectedCapster] = useState('');
-
-  const MAX_QUEUE = 15;
 
   useEffect(() => {
     fetchCapsters();
@@ -133,7 +143,20 @@ export const SlotManagePage = () => {
       setLoading(true);
       const caps = Storage.get<any[]>('capsters', []);
       setCapsters(caps);
-      if (caps.length > 0) setSelectedCapster(caps[0].id.toString());
+      
+      const userStr = localStorage.getItem("admin_user");
+      let currentUser = null;
+      if (userStr) currentUser = JSON.parse(userStr);
+
+      if (caps.length > 0) {
+        if (currentUser && currentUser.role === 'kapster') {
+           const match = caps.find((c: any) => c.name.toLowerCase() === currentUser.name.toLowerCase());
+           if (match) setSelectedCapster(match.id.toString());
+           else setSelectedCapster(caps[0].id.toString());
+        } else {
+           setSelectedCapster(caps[0].id.toString());
+        }
+      }
     } catch (err) {
       console.error('Failed to fetch capsters:', err);
     } finally {
@@ -196,20 +219,14 @@ export const SlotManagePage = () => {
   return (
     <div>
       <TitleSection>
-        <h1>Schedule Management</h1>
-        <p>Control availability and block slots for offline appointments</p>
+        <h1>Manajemen Jadwal</h1>
+        <p>Kontrol ketersediaan dan blokir slot untuk janji temu offline</p>
       </TitleSection>
 
       <Toolbar>
         <div className="input-label" style={{ flex: '0 0 240px' }}>
-          <label><Calendar size={14} /> Selected Date</label>
+          <label><Calendar size={14} /> Tanggal Terpilih</label>
           <input type="date" value={dateFilter} onChange={e=>setDateFilter(e.target.value)} />
-        </div>
-        <div className="input-label">
-          <label><User size={14} /> Active Personnel</label>
-          <select value={selectedCapster} onChange={e=>setSelectedCapster(e.target.value)}>
-            {capsters.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
         </div>
       </Toolbar>
 
@@ -217,23 +234,24 @@ export const SlotManagePage = () => {
         <InfoBox>
           <div className="icon"><ShieldAlert size={24} /></div>
           <div className="text">
-            <h4>Quick Slot Locking</h4>
-            <p>Locked slots will be hidden from the online reservation system. This is useful for manual breaks or walk-in customers that haven't been added yet.</p>
+            <h4>Manajemen Slot & Aturan Kedatangan</h4>
+            <p>Slot yang dikunci akan disembunyikan dari sistem reservasi online. <strong>Informasi Penting:</strong> Pelanggan reservasi online telah diinstruksikan untuk hadir <strong>15 menit</strong> sebelum waktu slot yang dipilih ({TIME_SLOTS[0]} dsb).</p>
           </div>
         </InfoBox>
         
         <TimeGrid>
-          {Array.from({ length: MAX_QUEUE }, (_, i) => {
+          {TIME_SLOTS.map((timeStr, i) => {
              const num = i + 1;
              const locked = lockedSlots.some((l: any) => l.slot_number === num);
              return (
                <SlotBtn key={num} $locked={locked} onClick={() => toggleLock(num)}>
                  <div className="prefix">{activeCapster?.queue_prefix || ''}{num}</div>
+                 <div className="time">{timeStr}</div>
                  <div className="status">
                    {locked ? (
-                     <><Lock size={14} /> Locked</>
+                     <><Lock size={14} /> Terkunci</>
                    ) : (
-                     <><CheckCircle2 size={14} /> Available</>
+                     <><CheckCircle2 size={14} /> Tersedia</>
                    )}
                  </div>
                </SlotBtn>
