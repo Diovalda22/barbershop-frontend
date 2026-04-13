@@ -93,6 +93,32 @@ const Toolbar = styled.div`
     background: ${C.bg};
     &:focus { border-color: ${C.blue}; background: white; }
   }
+
+  .view-toggle {
+    display: flex;
+    gap: 8px;
+    background: ${C.bg};
+    padding: 4px;
+    border-radius: 12px;
+    
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      color: ${C.textMuted};
+      transition: all 0.2s;
+      
+      &.active {
+        background: white;
+        color: ${C.primary};
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      }
+    }
+  }
 `;
 
 const ExportBtn = styled.button`
@@ -146,22 +172,30 @@ export const RevenuePage = () => {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateMonth, setDateMonth] = useState(new Date().toISOString().slice(0, 7)); // yyyy-MM
+  const [viewFilter, setViewFilter] = useState<'saya' | 'semua'>('saya');
   const shopName = "Barbershop";
 
   useEffect(() => {
     fetchReport();
-  }, [dateMonth]);
+  }, [dateMonth, viewFilter]);
 
   const fetchReport = () => {
     setLoading(true);
     // filter reservations yang periodenya masuk bulan ini dan sudah dibayar 
     const allReservations = Storage.get<any[]>('reservations', []);
     
-    const monthlyBookings = allReservations.filter((r: any) => {
+    const userStr = localStorage.getItem("admin_user");
+    const currentUser = userStr ? JSON.parse(userStr) : null;
+
+    let monthlyBookings = allReservations.filter((r: any) => {
       // asumsi format r.booking_date adalah YYYY-MM-DD
       return typeof r.booking_date === 'string' && r.booking_date.startsWith(dateMonth) &&
              r.payment?.status === 'paid';
     });
+
+    if (viewFilter === 'saya' && currentUser) {
+      monthlyBookings = monthlyBookings.filter((r: any) => r.capster?.name?.toLowerCase() === currentUser.name.toLowerCase());
+    }
 
     setBookings(monthlyBookings);
 
@@ -199,29 +233,35 @@ export const RevenuePage = () => {
   return (
     <div>
       <TitleSection>
-        <h1>Revenue Analytics</h1>
-        <p>Track your business growth and performance</p>
+        <h1>Analisis Pendapatan</h1>
+        <p>Pantau pertumbuhan dan performa bisnis Anda</p>
       </TitleSection>
 
       <RevenueCard>
         <div className="label-group">
           <div className="icon-box"><Calculator size={26} /></div>
           <div>
-            <h3>Monthly Revenue Total</h3>
+            <h3>Total Pendapatan Bulanan</h3>
             <div className="value">Rp {reportData?.total_revenue?.toLocaleString('id-ID') || 0}</div>
           </div>
         </div>
         <div className="trend">
           <TrendingUp size={18} />
-          {reportData?.total_bookings || 0} Bookings Completed
+          {reportData?.total_bookings || 0} Pesanan Selesai
         </div>
       </RevenueCard>
 
       <TableCard>
         <Toolbar>
-           <input type="month" className="period-picker" value={dateMonth} onChange={e=>setDateMonth(e.target.value)} />
+           <div style={{display:'flex', gap:'16px', alignItems:'center'}}>
+             <input type="month" className="period-picker" value={dateMonth} onChange={e=>setDateMonth(e.target.value)} />
+             <div className="view-toggle">
+               <button className={viewFilter === 'saya' ? 'active' : ''} onClick={() => setViewFilter('saya')}>Pendapatan Saya</button>
+               <button className={viewFilter === 'semua' ? 'active' : ''} onClick={() => setViewFilter('semua')}>Pendapatan Semua</button>
+             </div>
+           </div>
            <ExportBtn onClick={exportToExcel}>
-             <Download size={18} /> Export Excel
+             <Download size={18} /> Ekspor Excel
            </ExportBtn>
         </Toolbar>
 
@@ -233,16 +273,16 @@ export const RevenuePage = () => {
           <Table>
             <thead>
               <tr>
-                <th>Date & Time</th>
+                <th>Tanggal & Jam</th>
                 <th>Kode</th>
-                <th>Customer Name</th>
+                <th>Nama Pelanggan</th>
                 <th>Kapster</th>
-                <th>Total Amount</th>
+                <th>Total Harga</th>
               </tr>
             </thead>
             <tbody>
               {bookings.length === 0 && (
-                <tr><td colSpan={5} style={{textAlign:'center', color:C.textMuted, padding:'48px'}}>No data found for this period.</td></tr>
+                <tr><td colSpan={5} style={{textAlign:'center', color:C.textMuted, padding:'48px'}}>Data tidak ditemukan untuk periode ini.</td></tr>
               )}
               {bookings.map(r => (
                 <tr key={r.id}>

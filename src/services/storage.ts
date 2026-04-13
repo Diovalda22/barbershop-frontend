@@ -1,8 +1,8 @@
 export const PREFIX = 'barber_';
 
 export const SEED_CAPSTERS = [
-  { id: '1', nama: 'MUNYING', role: 'Senior Capster', noHp: '081234567890', foto: '/capster1.png', bio: 'Spesialis fade & modern styling', status: 'active', qPrefix: 'A' },
-  { id: '2', nama: 'SANI', role: 'Senior Capster', foto: '/capster2.png', bio: 'Ahli coloring & creative styling', status: 'active', qPrefix: 'B' }
+  { id: '1', name: 'MUNYING', role: 'Senior Capster', noHp: '081234567890', foto: '/capster1.png', bio: 'Spesialis fade & modern styling', status: 'active', queue_prefix: 'A' },
+  { id: '2', name: 'SANI', role: 'Senior Capster', foto: '/capster2.png', bio: 'Ahli coloring & creative styling', status: 'active', queue_prefix: 'B' }
 ];
 
 export const SEED_SERVICES = [

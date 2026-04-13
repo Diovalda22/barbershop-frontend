@@ -87,20 +87,6 @@ const FormSide = styled.div`
   position: relative;
 `;
 
-const BackLink = styled(Link)`
-  position: absolute;
-  top: 40px;
-  left: 40px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: ${C.textMuted};
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 600;
-  transition: 0.2s;
-  &:hover { color: ${C.primary}; transform: translateX(-4px); }
-`;
 
 const FormCard = styled.div`
   width: 100%;
@@ -209,24 +195,22 @@ export function AdminRegisterPage() {
               <ShieldCheck size={40} color="white" />
             </div>
             <h1>Join the Control Center</h1>
-            <p>Daftarkan akun manajerial baru Anda untuk mulai mengelola barbershop Anda secara profesional.</p>
+            <p>Daftarkan akun manajerial baru Anda untuk mulai mengelola barbershop secara profesional.</p>
           </div>
         </HeroSide>
 
         <FormSide>
-          <BackLink to="/admin/login">
-            <ArrowLeft size={18} /> Back to Login
-          </BackLink>
+            <ArrowLeft size={18} /> Kembali ke Login
           
           <FormCard>
             <Header>
-              <h2>Create Manager Account</h2>
-              <p>Please fill in the details below to request access.</p>
+              <h2>Buat Akun Manager</h2>
+              <p>Silakan isi detail di bawah untuk meminta akses.</p>
             </Header>
 
             <Form onSubmit={handleSubmit}>
               <InputGroup>
-                <label>Full Name</label>
+                <label>Nama Lengkap</label>
                 <div className="input-wrap">
                   <User />
                   <input 
@@ -234,7 +218,7 @@ export function AdminRegisterPage() {
                     required 
                     value={form.name} 
                     onChange={e => setForm({...form, name: e.target.value})} 
-                    placeholder="Enter your full name" 
+                    placeholder="Masukkan nama lengkap Anda" 
                   />
                 </div>
               </InputGroup>
@@ -268,16 +252,16 @@ export function AdminRegisterPage() {
               </InputGroup>
 
               <SubmitBtn type="submit" disabled={isLoading}>
-                {isLoading ? 'Creating Request...' : (
+                {isLoading ? 'Mengirim Permintaan...' : (
                   <>
-                    <UserPlus size={20} /> Submit Registration
+                    <UserPlus size={20} /> Kirim Pendaftaran
                   </>
                 )}
               </SubmitBtn>
             </Form>
 
             <Footer>
-              Already have an account? <Link to="/admin/login">Login here</Link>
+              Sudah punya akun? <Link to="/admin/login">Login di sini</Link>
             </Footer>
           </FormCard>
         </FormSide>

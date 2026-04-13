@@ -144,7 +144,7 @@ export const DashboardPage = () => {
   const barChartConfig = {
     labels: chartData.labels,
     datasets: [{
-      label: 'Total Orders',
+      label: 'Total Pesanan',
       data: chartData.data,
       backgroundColor: '#3B82F6', 
       borderRadius: 6,
@@ -166,62 +166,62 @@ export const DashboardPage = () => {
     <div>
       <TopRow>
         <Greeting>
-          <h1>Hello, {adminName}! 👋</h1>
-          <p>This is what's happening in your store today.</p>
+          <h1>Halo, {adminName}! 👋</h1>
+          <p>Inilah yang terjadi di tokomu hari ini.</p>
         </Greeting>
       </TopRow>
 
       <StatsGrid>
         <StatCard $primary>
           <div className="header">
-            <h3>Total revenue</h3>
+            <h3>Total pendapatan</h3>
             <div className="icon-wrap"><ArrowUpRight size={16} /></div>
           </div>
           <div className="value">
             Rp {data?.today?.revenue?.toLocaleString('id-ID') || 0}
           </div>
-          <p className="sub">Today's Revenue</p>
+          <p className="sub">Pendapatan Hari Ini</p>
         </StatCard>
 
         <StatCard>
           <div className="header">
-            <h3>Total orders</h3>
+            <h3>Total pesanan</h3>
             <div className="icon-wrap"><ArrowUpRight size={16} /></div>
           </div>
           <div className="value">
             {data?.today?.total_bookings || 0}
           </div>
-          <p className="sub">Today's Orders</p>
+          <p className="sub">Pesanan Hari Ini</p>
         </StatCard>
 
         <StatCard>
           <div className="header">
-            <h3>Active Queue</h3>
+            <h3>Antrean Aktif</h3>
             <div className="icon-wrap"><ArrowUpRight size={16} /></div>
           </div>
           <div className="value">
             {data?.queue?.waiting || 0}
           </div>
-          <p className="sub">Waiting Customers</p>
+          <p className="sub">Pelanggan Menunggu</p>
         </StatCard>
 
         <StatCard>
           <div className="header">
-            <h3>Monthly Revenue</h3>
+            <h3>Pendapatan Bulanan</h3>
             <div className="icon-wrap"><ArrowUpRight size={16} /></div>
           </div>
           <div className="value">
             Rp {data?.month_revenue?.toLocaleString('id-ID') || 0}
           </div>
-          <p className="sub">Current Month Balance</p>
+          <p className="sub">Saldo Bulan Ini</p>
         </StatCard>
       </StatsGrid>
 
       <BigChartCard>
         <div className="header">
           <div>
-            <h3>Popular Services</h3>
-            <p>Distribution of your top service offerings</p>
+            <h3>Layanan Populer</h3>
+            <p>Distribusi penawaran layanan teratas Anda</p>
           </div>
           <div className="icon-wrap">
             <TrendingUp size={20} color={C.blue} />
@@ -234,22 +234,22 @@ export const DashboardPage = () => {
         <ActionCard onClick={() => window.location.href = '/admin/reservations'}>
           <div className="icon"><Plus size={24} /></div>
           <div>
-            <h4>Quick Registration</h4>
-            <p>Add walk-in customer</p>
+            <h4>Registrasi Cepat</h4>
+            <p>Tambah pelanggan walk-in</p>
           </div>
         </ActionCard>
         <ActionCard onClick={() => window.location.href = '/admin/data'}>
           <div className="icon"><Users size={24} /></div>
           <div>
-            <h4>Manage Personnel</h4>
-            <p>Update kapster data</p>
+            <h4>Kelola Personel</h4>
+            <p>Perbarui data kapster</p>
           </div>
         </ActionCard>
         <ActionCard onClick={() => window.location.href = '/admin/revenue'}>
           <div className="icon"><Wallet size={24} /></div>
           <div>
-            <h4>Store Reports</h4>
-            <p>Check and export revenue</p>
+            <h4>Laporan Toko</h4>
+            <p>Cek dan ekspor pendapatan</p>
           </div>
         </ActionCard>
       </div>

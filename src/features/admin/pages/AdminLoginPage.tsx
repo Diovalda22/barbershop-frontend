@@ -130,11 +130,27 @@ export function AdminLoginPage() {
     setIsLoading(true)
     setError('')
     
-    // Simulasi — tanpa API call
-    await new Promise(r => setTimeout(r, 1000))
+    // Auth Simulation
+    const email = form.email.toLowerCase()
+    let role = 'kapster'
+    let name = ''
+    
+    if (email === 'munying@pointcut.com') {
+      name = 'Munying'
+    } else if (email === 'sani@pointcut.com') {
+      name = 'Sani'
+    } else {
+      setError('Email tidak dikenali sebagai Kapster.')
+      setIsLoading(false)
+      return
+    }
+    
+    localStorage.setItem("admin_user", JSON.stringify({ email, role, name }))
+
     navigate('/admin')
     setIsLoading(false)
   }
+
 
   return (
     <>
@@ -153,7 +169,7 @@ export function AdminLoginPage() {
             
             <Form onSubmit={handleSubmit}>
               <div>
-                <Label htmlFor="email">Email Address
+                <Label htmlFor="email">Alamat Email
                   <div style={{position:'relative', display:'flex', alignItems:'center'}}>
                     <Mail size={18} style={{position:'absolute', left:'12px', color:C.textMuted}} />
                     <Input 

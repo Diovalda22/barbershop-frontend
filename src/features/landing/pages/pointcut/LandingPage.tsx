@@ -3,15 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { Storage } from "@/services/storage";
 
 const C = {
-  dark: "#1a1a18",
-  dark2: "#2a2520",
-  cream: "#f4ede3",
-  beige: "#ede6db",
+  dark: "#0d0d0d",
+  dark2: "#161616",
+  cream: "#0d0d0d",
+  beige: "#161616",
   gold: "#c8a96e",
+  goldLight: "#e6c98a",
   white: "#fff",
-  muted: "#888",
-  text: "#1a1a18",
-  border: "#e0d8ce",
+  muted: "rgba(255,255,255,0.5)",
+  text: "rgba(255,255,255,0.88)",
+  border: "rgba(255,255,255,0.08)",
+  surface: "#1f1f1f",
   fS: "'Playfair Display',serif",
   fB: "'DM Sans',sans-serif",
   fO: "'Oswald',sans-serif",
@@ -27,13 +29,13 @@ const NAV = [
   { l: "Gallery", id: "gallery" },
 ];
 const HOURS = [
-  ["SENIN", "12:00 – 21:00"],
-  ["SELASA", "12:00 – 22:00"],
-  ["RABU", "12:00 – 22:00"],
-  ["KAMIS", "12:00 – 22:00"],
-  ["JUMAT", "12:00 – 22:00"],
-  ["SABTU", "12:00 – 22:00"],
-  ["MINGGU", "12:00 – 22:00"],
+  ["SENIN", "13:30 – 21:00"],
+  ["SELASA", "13:30 – 21:00"],
+  ["RABU", "13:30 – 21:00"],
+  ["KAMIS", "13:30 – 21:00"],
+  ["JUMAT", "13:30 – 21:00"],
+  ["SABTU", "13:30 – 21:00"],
+  ["MINGGU", "13:30 – 21:00"],
 ];
 const CLASSIC = [
   {
@@ -186,30 +188,30 @@ export function LandingPage() {
     <>
       <style>{`
         *{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}
-        body{font-family:'DM Sans',sans-serif;background:#f4ede3;color:#1a1a18;overflow-x:hidden}
+        body{font-family:'DM Sans',sans-serif;background:#0d0d0d;color:rgba(255,255,255,0.88);overflow-x:hidden}
         img{max-width:100%;display:block}button{cursor:pointer;font-family:inherit}
         .font-serif{font-family:'Playfair Display',serif}
         .font-oswald{font-family:'Oswald',sans-serif}
         .font-dm{font-family:'DM Sans',sans-serif}
-        .btn-gold{background:#c8a96e;color:#fff;font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;padding:12px 28px;border:none;transition:.25s;cursor:pointer}
-        .btn-gold:hover{background:#b09558}
-        .nav-link{background:none;border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:4px 0;transition:.2s;cursor:pointer}
+        .btn-gold{background:#c8a96e;color:#0d0d0d;font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:13px 30px;border:none;transition:.25s;cursor:pointer;border-radius:1px}
+        .btn-gold:hover{background:#e6c98a;color:#0d0d0d}
+        .nav-link{background:none;border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:4px 0;transition:.2s;cursor:pointer;letter-spacing:0.3px}
         .nav-link:hover{color:#c8a96e}
-        .nav-link-active{color:#c8a96e;border-bottom:2px solid #c8a96e}
-        .nav-link-inactive{color:#fff;border-bottom:2px solid transparent}
-        .mnl{background:none;border:none;color:#fff;font-family:'DM Sans',sans-serif;font-size:16px;font-weight:500;padding:14px 0;text-align:left;border-bottom:1px solid rgba(255,255,255,.06);width:100%;transition:.2s;cursor:pointer}
+        .nav-link-active{color:#c8a96e;border-bottom:1px solid #c8a96e}
+        .nav-link-inactive{color:rgba(255,255,255,0.75);border-bottom:1px solid transparent}
+        .mnl{background:none;border:none;color:rgba(255,255,255,0.85);font-family:'DM Sans',sans-serif;font-size:16px;font-weight:500;padding:14px 0;text-align:left;border-bottom:1px solid rgba(255,255,255,.06);width:100%;transition:.2s;cursor:pointer}
         .mnl:hover{color:#c8a96e}
         .mnl-active{color:#c8a96e}
-        .acc-btn{width:100%;text-align:left;background:none;border:none;padding:16px 0;display:flex;justify-content:space-between;align-items:center;font-family:'Playfair Display',serif;font-size:17px;color:#1a1a18;transition:.2s;cursor:pointer}
+        .acc-btn{width:100%;text-align:left;background:none;border:none;padding:18px 0;display:flex;justify-content:space-between;align-items:center;font-family:'Playfair Display',serif;font-size:16px;color:rgba(255,255,255,0.88);transition:.2s;cursor:pointer}
         .acc-btn:hover{color:#c8a96e}
-        .how-tab{background:transparent;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;padding:10px 28px;border:2px solid;transition:.25s;cursor:pointer}
-        .how-tab:hover{background:#1a1a18;color:#fff;border-color:#1a1a18}
-        .how-tab-active{background:#1a1a18;color:#fff;border-color:#1a1a18}
-        .how-tab-inactive{background:#fff;color:#888;border-color:#e0d8ce}
+        .how-tab{background:transparent;font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;padding:10px 32px;border:1px solid;transition:.25s;cursor:pointer}
+        .how-tab:hover{background:rgba(200,169,110,0.1);color:#c8a96e;border-color:#c8a96e}
+        .how-tab-active{background:rgba(200,169,110,0.15);color:#c8a96e;border-color:#c8a96e}
+        .how-tab-inactive{background:transparent;color:rgba(255,255,255,0.5);border-color:rgba(255,255,255,0.15)}
         .g-img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:2px;transition:.4s}
-        .g-img:hover{transform:scale(1.02);box-shadow:0 8px 24px rgba(0,0,0,.3)}
-        .bsoc-btn{background:#c8a96e;color:#fff;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:12px;text-decoration:none;transition:.2s}
-        .bsoc-btn:hover{background:#b09558}
+        .g-img:hover{transform:scale(1.02);box-shadow:0 8px 24px rgba(0,0,0,.5)}
+        .bsoc-btn{background:#c8a96e;color:#0d0d0d;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:12px;text-decoration:none;transition:.2s;font-weight:700}
+        .bsoc-btn:hover{background:#e6c98a}
         @media(max-width:768px){
           .nav-links{display:none!important}
           .nav-cta{display:none!important}
@@ -425,7 +427,7 @@ export function LandingPage() {
                 marginBottom: "12px",
               }}
             >
-              OFF on your first appointment!
+              Dapatkan Potongan Harga 20% Untuk Reservasi Pertama Anda
             </p>
             <p
               style={{
@@ -435,10 +437,10 @@ export function LandingPage() {
                 margin: "8px 0 24px",
               }}
             >
-              +62 812-3456-7890
+            Dari Rp 65.000, kamu hanya bayar Rp 50.000 aja!
             </p>
             <button className="btn-gold" onClick={startBooking}>
-              BUAT RESERVASI
+              RESERVASI SEKARANG
             </button>
           </div>
           {/* Mid */}
@@ -477,7 +479,7 @@ export function LandingPage() {
             <p
               style={{
                 fontSize: "14px",
-                color: "#555",
+                color: C.muted,
                 lineHeight: 1.8,
                 marginTop: "12px",
               }}
@@ -490,7 +492,7 @@ export function LandingPage() {
           </div>
           {/* Right */}
           <div
-            style={{ background: C.dark, padding: "48px 40px", color: "#fff" }}
+            style={{ background: C.beige, padding: "48px 40px", color: "#fff" }}
           >
             <h3
               className="font-oswald"
@@ -512,7 +514,7 @@ export function LandingPage() {
                 className="flex justify-between"
                 style={{
                   padding: "8px 0",
-                  borderBottom: "1px solid rgba(255,255,255,.07)",
+                  borderBottom: "1px solid rgba(255,255,255,.15)",
                   fontSize: "13px",
                   color: h === "TUTUP" ? C.gold : "rgba(255,255,255,.7)",
                 }}
@@ -655,7 +657,7 @@ export function LandingPage() {
                         fontSize: "13px",
                       }}
                     >
-                      <span style={{ color: "#444" }}>{item.n}</span>
+                      <span style={{ color: C.text }}>{item.n}</span>
                       <span
                         className="font-oswald"
                         style={{
@@ -847,17 +849,17 @@ export function LandingPage() {
         </p>
 
         {/* Tabs */}
-        <div className="flex justify-center mb-12">
+        <div className="flex justify-center mb-12" style={{ gap: "16px" }}>
           <button
             className={`how-tab ${howTab === "online" ? "how-tab-active" : "how-tab-inactive"}`}
-            style={{ borderRight: "none" }}
+            style={{ borderRadius: "4px" }}
             onClick={() => setHowTab("online")}
           >
             Online
           </button>
           <button
             className={`how-tab ${howTab === "offline" ? "how-tab-active" : "how-tab-inactive"}`}
-            style={{ borderLeft: "none" }}
+            style={{ borderRadius: "4px" }}
             onClick={() => setHowTab("offline")}
           >
             Offline
@@ -934,7 +936,7 @@ export function LandingPage() {
                           style={{
                             width: "52px",
                             height: "52px",
-                            background: (s as any).last ? C.gold : C.dark,
+                            background: C.gold,
                             fontSize: "18px",
                             boxShadow: "0 4px 12px rgba(0,0,0,.18)",
                           }}
@@ -948,8 +950,8 @@ export function LandingPage() {
                               top: "26px",
                               left: "52px",
                               width: "100%",
-                              height: "2px",
-                              background: C.border,
+                              height: "1px",
+                              background: "rgba(200,169,110,0.3)",
                               zIndex: -1,
                             }}
                           />
@@ -1016,7 +1018,7 @@ export function LandingPage() {
                         style={{
                           width: "44px",
                           height: "44px",
-                          background: (s as any).last ? C.gold : C.dark,
+                          background: C.gold,
                           fontSize: "16px",
                         }}
                       >
@@ -1139,13 +1141,26 @@ export function LandingPage() {
                           style={{
                             width: "52px",
                             height: "52px",
-                            background: (s as any).last ? C.gold : C.dark,
+                            background: C.gold,
                             fontSize: "18px",
                             boxShadow: "0 4px 12px rgba(0,0,0,.18)",
                           }}
                         >
                           {s.n}
                         </div>
+                        {!(s as any).last && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: "26px",
+                              left: "52px",
+                              width: "100%",
+                              height: "1px",
+                              background: "rgba(200,169,110,0.3)",
+                              zIndex: -1,
+                            }}
+                          />
+                        )}
                       </div>
                       <p
                         className="font-oswald text-center"
@@ -1207,7 +1222,7 @@ export function LandingPage() {
                         style={{
                           width: "44px",
                           height: "44px",
-                          background: (s as any).last ? C.gold : C.dark,
+                          background: C.gold,
                           fontSize: "16px",
                         }}
                       >
@@ -1299,7 +1314,7 @@ export function LandingPage() {
         <p
           className="text-center"
           style={{
-            color: "rgba(255,255,255,.6)",
+            color: C.muted,
             fontSize: "14px",
             marginBottom: "36px",
             marginTop: "8px",
@@ -1369,9 +1384,11 @@ export function LandingPage() {
             <div
               key={i}
               style={{
-                background: "rgba(255,255,255,.04)",
-                border: "1px solid rgba(255,255,255,.08)",
+                background: "rgba(255,255,255,.03)",
+                border: `1px solid ${C.border}`,
                 padding: "28px",
+                borderRadius: "2px",
+                transition: ".2s",
               }}
             >
               <div
@@ -1388,7 +1405,7 @@ export function LandingPage() {
               <p
                 style={{
                   fontSize: "13px",
-                  color: "rgba(255,255,255,.6)",
+                  color: C.muted,
                   fontStyle: "italic",
                   lineHeight: 1.8,
                   marginBottom: "14px",
@@ -1401,7 +1418,7 @@ export function LandingPage() {
                 style={{
                   fontSize: "13px",
                   textTransform: "uppercase",
-                  color: "#fff",
+                  color: C.text,
                   letterSpacing: "1px",
                 }}
               >
@@ -1418,7 +1435,7 @@ export function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer id="contact" style={{ background: "#111", padding: "56px 5% 0" }}>
+      <footer id="contact" style={{ background: "#080808", padding: "56px 5% 0" }}>
         <div
           className="foot-grid"
           style={{
@@ -1535,12 +1552,11 @@ export function LandingPage() {
           style={{
             padding: "18px 0",
             fontSize: "11px",
-            color: "rgba(255,255,255,.3)",
+            color: "rgba(255,255,255,.25)",
             gap: "6px",
           }}
         >
           <span>© 2026 Studio Pointcut. All rights reserved.</span>
-          <span>Made with ♥ in Indonesia</span>
         </div>
       </footer>
 

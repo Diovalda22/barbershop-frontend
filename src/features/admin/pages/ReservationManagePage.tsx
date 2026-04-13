@@ -19,6 +19,12 @@ const C = {
   dangerBg: '#FEF2F2'
 };
 
+const TIME_SLOTS = [
+  "13:30", "14:00", "14:30", "15:00", "15:30", 
+  "16:00", "16:30", "17:00", "17:30", 
+  "18:45", "19:15", "19:45", "20:15", "20:45"
+];
+
 const TitleSection = styled.div`
   margin-bottom: 32px;
   h1 { font-size: 26px; font-weight: 800; color: ${C.primary}; margin-bottom: 6px; letter-spacing: -0.5px; }
@@ -111,12 +117,19 @@ const BtnPrimary = styled.button`
   &:hover { 
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(192, 57, 43, 0.3);
-  }
+}
+`;
+
+const TableWrapper = styled.div`
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 `;
 
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
+  min-width: 800px; /* Enable horizontal scrolling on mobile */
 
   th, td {
     padding: 18px 16px;
@@ -210,9 +223,10 @@ export const ReservationManagePage = () => {
   const [dateFilter, setDateFilter] = useState(new Date().toISOString().split('T')[0]);
   const [modalOpen, setModalOpen] = useState(false);
   const [formCapster, setFormCapster] = useState('');
-  const [formService, setFormService] = useState('');
-  const [formCustomer, setFormCustomer] = useState('');
-  const [formPaymentMethod, setFormPaymentMethod] = useState('cash');
+  const [formMainHaircut, setFormMainHaircut] = useState('Haircut Senior');
+  const [formAddons, setFormAddons] = useState<string[]>([]);
+  const [addonsOpen, setAddonsOpen] = useState(false);
+
 
   useEffect(() => {
     fetchInitialData();
@@ -229,8 +243,20 @@ export const ReservationManagePage = () => {
       
       setCapsters(caps);
       setServices(svcs);
-      if (caps.length > 0) setFormCapster(caps[0].id.toString());
-      if (svcs.length > 0) setFormService(svcs[0].id.toString());
+
+      const userStr = localStorage.getItem("admin_user");
+      let currentUser = null;
+      if (userStr) currentUser = JSON.parse(userStr);
+
+      if (caps.length > 0) {
+        if (currentUser && currentUser.role === 'kapster') {
+           const match = caps.find((c: any) => c.name.toLowerCase() === currentUser.name.toLowerCase());
+           if (match) setFormCapster(match.id.toString());
+           else setFormCapster(caps[0].id.toString());
+        } else {
+           setFormCapster(caps[0].id.toString());
+        }
+      }
     } catch (err) {
       console.error('Failed to fetch initial data:', err);
     }
@@ -240,8 +266,13 @@ export const ReservationManagePage = () => {
     try {
       setLoading(true);
       const allReservations = Storage.get('reservations', []);
-      // asumsikan format dateFilter "YYYY-MM-DD" dan reservation.booking_date formatnya juga serupa 
-      const filtered = allReservations.filter((r: any) => r.booking_date === dateFilter);
+      const userStr = localStorage.getItem("admin_user");
+      const currentUser = userStr ? JSON.parse(userStr) : null;
+      
+      let filtered = allReservations.filter((r: any) => r.booking_date === dateFilter);
+      if (currentUser?.role === 'kapster') {
+        filtered = filtered.filter((r: any) => r.capster?.name?.toLowerCase() === currentUser.name.toLowerCase());
+      }
       setData(filtered);
     } catch (err) {
       console.error('Failed to fetch bookings:', err);
@@ -284,29 +315,120 @@ export const ReservationManagePage = () => {
     }
   };
 
+  const updatePaymentMethod = async (paymentId: number, newMethod: string) => {
+    try {
+      const allRes = Storage.get('reservations', []);
+      const updated = allRes.map((r: any) => {
+        if (r.payment && r.payment.id === paymentId) {
+            return { ...r, payment: { ...r.payment, method: newMethod } };
+        }
+        return r;
+      });
+      Storage.set('reservations', updated);
+      fetchBookings();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleAddOffline = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formCapster || !formService || !formCustomer) return alert('Lengkapi data!');
+    if (!formCapster || !formMainHaircut) return alert('Lengkapi data!');
 
     try {
       const allRes = Storage.get('reservations', []);
-      
       const newCapster = capsters.find(c => c.id.toString() === formCapster);
-      const newService = services.find(s => s.id.toString() === formService);
       
+      const todayRes = allRes.filter((r: any) => r.booking_date === dateFilter && r.capster?.id === newCapster?.id);
+      const takenNums = new Set(
+         todayRes.map((r: any) => {
+            const match = r.queue_number?.match(/\d+$/);
+            return match ? parseInt(match[0], 10) : 0;
+         })
+      );
+
+      let startingNum = 1;
+      const now = new Date();
+      const isToday = dateFilter === now.toLocaleDateString("en-CA");
+
+      if (isToday) {
+         const currentH = now.getHours();
+         const currentM = now.getMinutes();
+         let foundFutureSlot = false;
+
+         for (let i = 0; i < TIME_SLOTS.length; i++) {
+             const [sh, sm] = TIME_SLOTS[i].split(":").map(Number);
+             if (sh > currentH || (sh === currentH && sm >= currentM)) {
+                  startingNum = i + 1;
+                  foundFutureSlot = true;
+                  break;
+             }
+         }
+
+         if (!foundFutureSlot) {
+             const [lastH, lastM] = TIME_SLOTS[TIME_SLOTS.length - 1].split(":").map(Number);
+             const lastTimeMins = lastH * 60 + lastM;
+             const currTimeMins = currentH * 60 + currentM;
+             
+             if (currTimeMins > lastTimeMins) {
+                  const diffMins = currTimeMins - lastTimeMins;
+                  const extraIntervals = Math.ceil(diffMins / 30);
+                  startingNum = TIME_SLOTS.length + extraIntervals;
+             } else {
+                  startingNum = TIME_SLOTS.length;
+             }
+         }
+      } else {
+         // if not today, just get max
+         let maxNum = 0;
+         for (let x of takenNums) if (x > maxNum) maxNum = x;
+         startingNum = Math.max(1, maxNum + 1);
+      }
+
+      let nextNum = startingNum;
+      while (takenNums.has(nextNum)) {
+          nextNum++;
+      }
+      
+      const qNum = (newCapster?.queue_prefix || '') + nextNum;
+
+      let amount = 0;
+      const mainSvc = services.find(s => s.name.toLowerCase() === formMainHaircut.toLowerCase()) || { name: formMainHaircut, price: formMainHaircut.toLowerCase().includes('junior') ? 25000 : 35000 };
+      amount += mainSvc.price;
+
+      formAddons.forEach(addonName => {
+         const sv = services.find(s => s.name === addonName);
+         if (sv) amount += sv.price;
+      });
+
+      let calculatedStartTime = "00:00";
+      if (nextNum <= TIME_SLOTS.length) {
+         calculatedStartTime = TIME_SLOTS[nextNum - 1];
+      } else {
+         const lastTimeStr = TIME_SLOTS[TIME_SLOTS.length - 1];
+         if (lastTimeStr) {
+             const [lastH, lastM] = lastTimeStr.split(":").map(Number);
+             let totalMins = lastH * 60 + lastM + (nextNum - TIME_SLOTS.length) * 30;
+             const h = Math.floor(totalMins / 60) % 24;
+             const m = totalMins % 60;
+             calculatedStartTime = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+         }
+      }
+
       const newBooking = {
         id: Date.now(),
-        customer_name: formCustomer,
-        type: 'offline', // asumsi offline
+        customer_name: "Cust-" + qNum,
+        type: 'offline', 
         capster: newCapster,
-        service: newService,
+        service: mainSvc,
+        notes: formAddons.length > 0 ? `Addons: ${formAddons.join(', ')}` : '',
         booking_date: dateFilter,
-        start_time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12: false}),
-        queue_number: (newCapster?.queue_prefix || '') + (Math.floor(Math.random() * 10) + 1),
+        start_time: calculatedStartTime,
+        queue_number: qNum,
         payment: {
             id: Date.now() + 1,
-            method: formPaymentMethod,
-            amount: newService?.price || 0,
+            method: 'cash',
+            amount,
             status: 'unpaid'
         },
         queue: {
@@ -317,7 +439,7 @@ export const ReservationManagePage = () => {
 
       Storage.set('reservations', [...allRes, newBooking]);
       setModalOpen(false);
-      setFormCustomer('');
+      setFormAddons([]);
       fetchBookings();
     } catch (err) {
       console.error('Failed to add offline booking:', err);
@@ -345,30 +467,30 @@ export const ReservationManagePage = () => {
   return (
     <div>
       <TitleSection>
-        <h1>Order List</h1>
-        <p>Manage and monitor your barbershop queue and status</p>
+        <h1>Daftar Pesanan</h1>
+        <p>Kelola dan pantau antrean serta status barbershop Anda</p>
       </TitleSection>
 
       <StatsGrid>
         <StatCard $color={C.blue} $bg="rgba(59, 130, 246, 0.1)">
-          <div className="header">Total Orders</div>
+          <div className="header">Total Pesanan</div>
           <div className="value">{counts.total}</div>
-          <div className="badge">Today's Total</div>
+          <div className="badge">Total Hari Ini</div>
         </StatCard>
         <StatCard $color={C.warning} $bg={C.warningBg}>
-          <div className="header">Active Queue</div>
+          <div className="header">Antrean Aktif</div>
           <div className="value">{counts.process}</div>
-          <div className="badge">In Service</div>
+          <div className="badge">Sedang Melayani</div>
         </StatCard>
         <StatCard $color={C.success} $bg={C.successBg}>
-          <div className="header">Completed</div>
+          <div className="header">Selesai</div>
           <div className="value">{counts.done}</div>
-          <div className="badge">Success</div>
+          <div className="badge">Sukses</div>
         </StatCard>
         <StatCard $color={C.danger} $bg={C.dangerBg}>
-          <div className="header">Skipped</div>
+          <div className="header">Dilewati</div>
           <div className="value">{counts.cancel}</div>
-          <div className="badge">Failed</div>
+          <div className="badge">Batal</div>
         </StatCard>
       </StatsGrid>
 
@@ -377,7 +499,7 @@ export const ReservationManagePage = () => {
            <div className="search-group">
              <div className="input-wrap">
                <Search size={18} />
-               <input type="text" placeholder="Search orders..." />
+               <input type="text" placeholder="Cari pesanan..." />
              </div>
              <div className="input-wrap">
                 <Calendar size={18} />
@@ -385,7 +507,7 @@ export const ReservationManagePage = () => {
              </div>
            </div>
            <BtnPrimary onClick={() => setModalOpen(true)}>
-             <Plus size={18} /> Add walk-in order
+             <Plus size={18} /> Tambah Pesanan Offline
            </BtnPrimary>
         </TableActionRow>
 
@@ -394,102 +516,141 @@ export const ReservationManagePage = () => {
               <span style={{ fontSize: '14px', color: C.textMuted }}>Memuat Data...</span>
           </div>
         ) : (
-          <Table>
-            <thead>
-              <tr>
-                <th>KODE</th>
-                <th>Customer Name</th>
-                <th>Service Type</th>
-                <th>Service Price</th>
-                <th>Payment Status</th>
-                <th>Service Time</th>
-                <th>Queue Status</th>
-                <th>Quick Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.length === 0 && (
-                <tr><td colSpan={8} style={{textAlign:'center', color:C.textMuted, padding:'48px'}}>No orders found for this date.</td></tr>
-              )}
-              {data.map((r: any) => (
-                <tr key={r.id}>
-                  <td><span style={{ fontWeight: 800, color: C.primary, fontSize: '15px' }}>{r.queue_number || '-'}</span></td>
-                  <td>
-                    <div style={{fontWeight:700}}>{r.customer_name}</div>
-                    <div style={{fontSize:'12px', color:C.textMuted}}>{r.type.toUpperCase()}</div>
-                  </td>
-                  <td>{r.service?.name}</td>
-                  <td><span style={{ fontWeight: 600 }}>Rp {r.payment?.amount?.toLocaleString('id-ID')}</span></td>
-                  <td>
-                    <span style={{ 
-                        fontSize: '11px', fontWeight: 800, padding: '4px 8px', borderRadius: '6px',
-                        background: r.payment?.status === 'paid' ? C.successBg : C.dangerBg,
-                        color: r.payment?.status === 'paid' ? C.success : C.danger
-                    }}>
-                        {r.payment?.status?.toUpperCase() || 'UNPAID'}
-                    </span>
-                  </td>
-                  <td>{r.start_time} WIB</td>
-                  <td><Badge $status={r.queue?.status}>{mapStatusDisplay(r.queue?.status)}</Badge></td>
-                  <td>
-                    <div style={{display:'flex', gap:'8px', alignItems:'center'}}>
-                      {r.queue && (
-                          <SelectStatus value={r.queue.status} onChange={e => updateQueueStatus(r.queue.id, e.target.value)}>
-                              <option value="waiting">Menunggu</option>
-                              <option value="in_service">Panggil / Melayani</option>
-                              <option value="done">Selesai</option>
-                              <option value="skipped">Lewati</option>
-                          </SelectStatus>
-                      )}
-                      {r.payment?.status !== 'paid' && (
-                        <BtnPrimary 
-                          style={{padding:'6px 14px', fontSize:'11px', background:C.success, boxShadow:'none'}}
-                          onClick={() => confirmPayment(r.payment.id)}
-                        >
-                          <CheckCircle2 size={12} /> Confirm Pay
-                        </BtnPrimary>
-                      )}
-                    </div>
-                  </td>
+          <TableWrapper>
+            <Table>
+              <thead>
+                <tr>
+                  <th>KODE</th>
+                  <th>Nama Pelanggan</th>
+                  <th>Tipe Layanan</th>
+                  <th>Harga Layanan</th>
+                  <th>Status Pembayaran</th>
+                  <th>Waktu Layanan</th>
+                  <th>Status Antrean</th>
+                  <th>Aksi Cepat</th>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
+              </thead>
+              <tbody>
+                {data.length === 0 && (
+                  <tr><td colSpan={8} style={{textAlign:'center', color:C.textMuted, padding:'48px'}}>Tidak ada pesanan untuk tanggal ini.</td></tr>
+                )}
+                {data.map((r: any) => (
+                  <tr key={r.id}>
+                    <td><span style={{ fontWeight: 800, color: C.primary, fontSize: '15px' }}>{r.queue_number || '-'}</span></td>
+                    <td>
+                      <div style={{fontWeight:700}}>{r.customer_name}</div>
+                      <div style={{fontSize:'12px', color:C.textMuted}}>{r.type.toUpperCase()}</div>
+                    </td>
+                    <td>
+                      {r.service?.name}
+                      {r.notes && <div style={{ fontSize: '11px', color: C.textMuted, marginTop: '2px' }}>{r.notes}</div>}
+                    </td>
+                    <td><span style={{ fontWeight: 600 }}>Rp {r.payment?.amount?.toLocaleString('id-ID')}</span></td>
+                    <td>
+                      <span style={{ 
+                          fontSize: '11px', fontWeight: 800, padding: '4px 8px', borderRadius: '6px',
+                          background: r.payment?.status === 'paid' ? C.successBg : C.dangerBg,
+                          color: r.payment?.status === 'paid' ? C.success : C.danger,
+                          display: 'block', width: 'fit-content', marginBottom: '8px'
+                      }}>
+                          {r.payment?.status?.toUpperCase() === 'PAID' ? 'SUDAH BAYAR' : 'BELUM BAYAR'}
+                      </span>
+                      {r.type === 'offline' ? (
+                        <select 
+                          value={r.payment?.method || 'cash'} 
+                          onChange={e => updatePaymentMethod(r.payment.id, e.target.value)}
+                          style={{ padding:'4px', fontSize:'12px', borderRadius:'6px', border:`1px solid ${C.border}`, outline:'none', cursor:'pointer' }}
+                        >
+                          <option value="cash">Tunai (Cash)</option>
+                          <option value="cashless">Cashless (QRIS)</option>
+                        </select>
+                      ) : (
+                        <div style={{ fontSize: '11px', fontWeight: 600, color: C.textMuted }}>Cashless (QRIS)</div>
+                      )}
+                    </td>
+                    <td>{r.start_time} WIB</td>
+                    <td><Badge $status={r.queue?.status}>{mapStatusDisplay(r.queue?.status)}</Badge></td>
+                    <td>
+                      <div style={{display:'flex', gap:'8px', alignItems:'center'}}>
+                        {r.queue && (
+                            <SelectStatus value={r.queue.status} onChange={e => updateQueueStatus(r.queue.id, e.target.value)}>
+                                <option value="waiting">Menunggu</option>
+                                <option value="in_service">Panggil / Melayani</option>
+                                <option value="done">Selesai</option>
+                                <option value="skipped">Lewati</option>
+                            </SelectStatus>
+                        )}
+                        {r.payment?.status !== 'paid' && (
+                          <BtnPrimary 
+                            style={{padding:'6px 14px', fontSize:'11px', background:C.success, boxShadow:'none'}}
+                            onClick={() => confirmPayment(r.payment.id)}
+                          >
+                            <CheckCircle2 size={12} /> Konfirmasi Bayar
+                          </BtnPrimary>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </TableWrapper>
         )}
       </Card>
 
       {modalOpen && (
         <ModalOverlay onClick={() => setModalOpen(false)}>
           <ModalContent onClick={e => e.stopPropagation()}>
-            <h2>Walk-In Registration <X size={20} cursor="pointer" onClick={() => setModalOpen(false)} /></h2>
+            <h2>Registrasi Walk-In <X size={20} cursor="pointer" onClick={() => setModalOpen(false)} /></h2>
             <form onSubmit={handleAddOffline}>
               <FormGroup>
-                <label>Customer Name</label>
-                <input required type="text" value={formCustomer} onChange={e => setFormCustomer(e.target.value)} placeholder="Nama pelanggan..." />
-              </FormGroup>
-              <FormGroup>
-                <label>Assign Kapster</label>
-                <select required value={formCapster} onChange={e => setFormCapster(e.target.value)}>
-                  {capsters.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                <label>Haircut Utama</label>
+                <select required value={formMainHaircut} onChange={e => setFormMainHaircut(e.target.value)}>
+                  <option value="Haircut Senior">Haircut Senior</option>
+                  <option value="Haircut Junior">Haircut Junior</option>
                 </select>
               </FormGroup>
               <FormGroup>
-                <label>Service</label>
-                <select required value={formService} onChange={e => setFormService(e.target.value)}>
-                  {services.map((s: any) => (
-                    <option key={s.id} value={s.id}>{s.name} (Rp {s.price.toLocaleString()})</option>
-                  ))}
-                </select>
+                <label>Tambah Lainnya (Addons)</label>
+                <div style={{ border: `1px solid ${C.border}`, borderRadius: '12px', padding: '12px', background: '#fff' }}>
+                   <div onClick={() => setAddonsOpen(!addonsOpen)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', fontWeight: 600, fontSize: '14px', color: C.text }}>
+                      <span>Pilih Tambahan ({formAddons.length})</span>
+                      <span>{addonsOpen ? '▲' : '▼'}</span>
+                   </div>
+                   {addonsOpen && (
+                      <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto' }}>
+                         {[
+                           {
+                             label: "Coloring",
+                             filter: (x: any) => x.name.toLowerCase().includes("coloring") || x.name.toLowerCase().includes("highlight")
+                           },
+                           {
+                             label: "Perm & Treatment",
+                             filter: (x: any) => x.name.toLowerCase().includes("perm") || x.name.toLowerCase().includes("lift")
+                           },
+                           {
+                             label: "Layanan Lainnya",
+                             filter: (x: any) => !x.name.toLowerCase().includes("coloring") && !x.name.toLowerCase().includes("highlight") && !x.name.toLowerCase().includes("perm") && !x.name.toLowerCase().includes("lift") && !x.name.toLowerCase().includes("haircut")
+                           }
+                         ].map(sec => (
+                             <div key={sec.label} style={{marginBottom:'6px'}}>
+                               <div style={{fontSize:'12px', fontWeight:800, color:C.textMuted, textTransform:'uppercase', letterSpacing:'0.5px'}}>{sec.label}</div>
+                               {services.filter(sec.filter).map((s: any) => (
+                                 <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 500, margin: '6px 0', fontSize: '13px', cursor: 'pointer' }}>
+                                    <input type="checkbox" checked={formAddons.includes(s.name)} onChange={(e) => {
+                                        if (e.target.checked) setFormAddons([...formAddons, s.name]);
+                                        else setFormAddons(formAddons.filter(a => a !== s.name));
+                                    }} style={{ width: 'auto', margin: 0 }} />
+                                    {s.name} <span style={{ color: C.textMuted }}>(Rp {s.price.toLocaleString()})</span>
+                                 </label>
+                               ))}
+                             </div>
+                         ))}
+                      </div>
+                   )}
+                </div>
               </FormGroup>
-              <FormGroup>
-                <label>Payment Method</label>
-                <select value={formPaymentMethod} onChange={e => setFormPaymentMethod(e.target.value)}>
-                  <option value="cash">Cash (Tunai)</option>
-                  <option value="qris">Cashless (QRIS/E-Wallet)</option>
-                </select>
-                <p style={{fontSize:'11px', color:C.textMuted, marginTop:'4px'}}>*Nasabah membayar setelah pengerjaan selesai.</p>
-              </FormGroup>
-              <BtnPrimary type="submit" style={{width:'100%', justifyContent:'center', marginTop:'8px'}}>Register Now</BtnPrimary>
+              <BtnPrimary type="submit" style={{width:'100%', justifyContent:'center', marginTop:'8px'}}>Daftar Sekarang</BtnPrimary>
             </form>
           </ModalContent>
         </ModalOverlay>

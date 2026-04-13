@@ -164,9 +164,9 @@ export const DataManagePage = () => {
   const saveSettings = () => {
     try {
       Storage.set('settings', settings);
-      alert('Settings saved successfully!');
+      alert('Pengaturan berhasil disimpan!');
     } catch (err: any) {
-      alert('Failed to save settings: ' + err.message);
+      alert('Gagal menyimpan pengaturan: ' + err.message);
     }
   };
 
@@ -187,7 +187,7 @@ export const DataManagePage = () => {
       setCapsters(updated);
       setNewCName('');
     } catch (err: any) {
-      alert('Failed to add personnel: ' + err.message);
+      alert('Gagal menambah personel: ' + err.message);
     }
   };
 
@@ -221,7 +221,7 @@ export const DataManagePage = () => {
       setNewSName('');
       setNewSPrice('');
     } catch (err: any) {
-      alert('Failed to add service: ' + err.message);
+      alert('Gagal menambah layanan: ' + err.message);
     }
   };
 
@@ -240,15 +240,15 @@ export const DataManagePage = () => {
   return (
     <div>
       <TitleSection>
-        <h1>Master Data Management</h1>
-        <p>Configure your barbershop profile, staff, and services</p>
+        <h1>Manajemen Data Master</h1>
+        <p>Konfigurasi profil barbershop, staf, dan layanan Anda</p>
       </TitleSection>
 
       <Section>
-        <h3><ShieldCheck size={20} /> Store Configuration</h3>
+        <h3><ShieldCheck size={20} /> Konfigurasi Toko</h3>
         <FormRow>
           <InputGroup>
-            <label>Barbershop Name</label>
+            <label>Nama Barbershop</label>
             <input 
               type="text" 
               value={settings.shopName} 
@@ -257,34 +257,34 @@ export const DataManagePage = () => {
             />
           </InputGroup>
           <ActionBtn onClick={saveSettings}>
-            <Save size={18} /> Update Store Info
+            <Save size={18} /> Perbarui Info Toko
           </ActionBtn>
         </FormRow>
       </Section>
 
       <Section>
-        <h3><UserPlus size={20} /> Kapster Personnel</h3>
+        <h3><UserPlus size={20} /> Personel Kapster</h3>
         <FormRow>
           <InputGroup>
-            <label>Full Name</label>
-            <input placeholder="New Kapster Name" value={newCName} onChange={e=>setNewCName(e.target.value)} />
+            <label>Nama Lengkap</label>
+            <input placeholder="Nama Kapster Baru" value={newCName} onChange={e=>setNewCName(e.target.value)} />
           </InputGroup>
           <InputGroup style={{flex: '0 0 140px'}}>
             <label>Kode</label>
             <input placeholder="e.g. A" value={newCPrefix} onChange={e=>setNewCPrefix(e.target.value)} maxLength={1} />
           </InputGroup>
           <ActionBtn onClick={addCapster}>
-            <Plus size={18} /> Add Personnel
+            <Plus size={18} /> Tambah Personel
           </ActionBtn>
         </FormRow>
         
         <ListContainer>
            {loading && <div style={{padding:'48px', textAlign:'center'}}><span style={{ fontSize: '14px', color: C.textMuted }}>Memuat Data...</span></div>}
-           {!loading && capsters.length === 0 && <div style={{padding:'24px', textAlign:'center', color:C.textMuted}}>No personnel registered.</div>}
+           {!loading && capsters.length === 0 && <div style={{padding:'24px', textAlign:'center', color:C.textMuted}}>Belum ada personel yang terdaftar.</div>}
            {!loading && capsters.map((c: any) => (
               <ListItem key={c.id}>
                  <div className="info" style={{ opacity: !c.is_active ? 0.5 : 1 }}>
-                    <strong>{c.name} {!c.is_active && <span style={{fontSize:'10px', background:C.danger, color:'white', padding:'2px 6px', borderRadius:'10px', marginLeft:8}}>CLOSED</span>}</strong>
+                    <strong>{c.name} {!c.is_active && <span style={{fontSize:'10px', background:C.danger, color:'white', padding:'2px 6px', borderRadius:'10px', marginLeft:8}}>TUTUP</span>}</strong>
                     <p>Kode: <span style={{color:C.blue, fontWeight:700}}>{c.queue_prefix || c.qPrefix}</span></p>
                  </div>
                  <div style={{display:'flex', gap:'8px'}}>
@@ -298,14 +298,14 @@ export const DataManagePage = () => {
                           Storage.set('capsters', updated);
                           setCapsters(updated);
                         } catch (err: any) {
-                          alert('Failed to update status: ' + err.message);
+                          alert('Gagal memperbarui status: ' + err.message);
                         }
                       }}
                     >
                       {!c.is_active ? 'Buka Barber' : 'Tutup Barber'}
                     </StatusBtn>
                     <ActionBtn $danger onClick={()=>deleteCapster(c.id)}>
-                      <Trash2 size={16} /> Delete
+                      <Trash2 size={16} /> Hapus
                     </ActionBtn>
                  </div>
               </ListItem>
@@ -314,24 +314,24 @@ export const DataManagePage = () => {
       </Section>
 
       <Section>
-        <h3><Scissors size={20} /> Service Menu & Pricing</h3>
+        <h3><Scissors size={20} /> Menu Layanan & Harga</h3>
         <FormRow>
           <InputGroup>
-            <label>Service Name</label>
-            <input placeholder="e.g. Gentleman Cut" value={newSName} onChange={e=>setNewSName(e.target.value)} />
+            <label>Nama Layanan</label>
+            <input placeholder="misal: Gentleman Cut" value={newSName} onChange={e=>setNewSName(e.target.value)} />
           </InputGroup>
           <InputGroup>
-            <label>Price (IDR)</label>
+            <label>Harga (IDR)</label>
             <input type="number" placeholder="50000" value={newSPrice} onChange={e=>setNewSPrice(e.target.value)} />
           </InputGroup>
           <ActionBtn onClick={addService}>
-            <Plus size={18} /> Add Service
+            <Plus size={18} /> Tambah Layanan
           </ActionBtn>
         </FormRow>
         
         <ListContainer>
            {loading && <div style={{padding:'48px', textAlign:'center'}}><span style={{ fontSize: '14px', color: C.textMuted }}>Memuat Data...</span></div>}
-           {!loading && services.length === 0 && <div style={{padding:'24px', textAlign:'center', color:C.textMuted}}>No services listed.</div>}
+           {!loading && services.length === 0 && <div style={{padding:'24px', textAlign:'center', color:C.textMuted}}>Tidak ada layanan yang terdaftar.</div>}
            {!loading && services.map((s: any) => (
               <ListItem key={s.id}>
                  <div className="info">
@@ -339,7 +339,7 @@ export const DataManagePage = () => {
                     <p style={{color:C.success, fontWeight:700}}>Rp {Number(s.price).toLocaleString('id-ID')}</p>
                  </div>
                  <ActionBtn $danger onClick={()=>deleteService(s.id)}>
-                   <Trash2 size={16} /> Delete
+                   <Trash2 size={16} /> Hapus
                  </ActionBtn>
               </ListItem>
            ))}
