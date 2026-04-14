@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { 
-  PieChart, CalendarDays, Clock, Wallet, Users, LogOut, Bell, Menu, X
+  PieChart, CalendarDays, Clock, Wallet, Users, LogOut, Bell, Menu, X, ShoppingCart, DollarSign
 } from 'lucide-react';
 import { initAdminStorage } from '@/services/storage';
 
@@ -162,6 +162,8 @@ export const AdminLayout = () => {
     if (path === '/admin/reservations') return 'Manajemen Pesanan';
     if (path === '/admin/slots') return 'Manajemen Jadwal';
     if (path === '/admin/revenue') return 'Analisis Pendapatan';
+    if (path === '/admin/expenses') return 'Catatan Pengeluaran';
+    if (path === '/admin/profit') return 'Laba Bersih';
     if (path === '/admin/data') return 'Data Master';
     return 'Panel Admin';
   }
@@ -182,6 +184,8 @@ export const AdminLayout = () => {
           <StyledNavLink to="/admin/reservations" onClick={() => setSidebarOpen(false)}><CalendarDays size={20} /> Daftar Pesanan</StyledNavLink>
           <StyledNavLink to="/admin/slots" onClick={() => setSidebarOpen(false)}><Clock size={20} /> Manajemen Slot</StyledNavLink>
           <StyledNavLink to="/admin/revenue" onClick={() => setSidebarOpen(false)}><Wallet size={20} /> Pendapatan</StyledNavLink>
+          <StyledNavLink to="/admin/expenses" onClick={() => setSidebarOpen(false)}><ShoppingCart size={20} /> Pengeluaran</StyledNavLink>
+          <StyledNavLink to="/admin/profit" onClick={() => setSidebarOpen(false)}><DollarSign size={20} /> Laba Bersih</StyledNavLink>
           <StyledNavLink to="/admin/data" onClick={() => setSidebarOpen(false)}><Users size={20} /> Data Master</StyledNavLink>
         </NavList>
         <LogoutBtn onClick={handleLogout}><LogOut size={20} /> Keluar</LogoutBtn>

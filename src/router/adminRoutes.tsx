@@ -4,6 +4,8 @@ import { DashboardPage } from "@/features/admin/pages/DashboardPage";
 import { ReservationManagePage } from "@/features/admin/pages/ReservationManagePage";
 import { SlotManagePage } from "@/features/admin/pages/SlotManagePage";
 import { RevenuePage } from "@/features/admin/pages/RevenuePage";
+import { ExpensePage } from "@/features/admin/pages/ExpensePage";
+import { NetProfitPage } from "@/features/admin/pages/NetProfitPage";
 import { DataManagePage } from "@/features/admin/pages/DataManagePage";
 
 import { AdminLoginPage } from "@/features/admin/pages/AdminLoginPage";
@@ -20,6 +22,8 @@ export const adminRoutes: RouteObject[] = [
       { path: "reservations", element: <ReservationManagePage /> },
       { path: "slots", element: <SlotManagePage /> },
       { path: "revenue", element: <RevenuePage /> },
+      { path: "expenses", element: <ExpensePage /> },
+      { path: "profit", element: <NetProfitPage /> },
       { path: "data", element: <DataManagePage /> },
     ],
   },

@@ -1,11 +1,12 @@
-import { useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement,
   LineElement, BarElement, Title, Tooltip, Legend,
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
-import { ArrowUpRight, TrendingUp, Plus, Users, Wallet } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, TrendingUp, Plus, Wallet, DollarSign, ShoppingCart } from 'lucide-react';
+import { Storage } from '@/services/storage';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
@@ -52,9 +53,6 @@ const StatCard = styled.div<{ $primary?: boolean }>`
   box-shadow: ${p => p.$primary ? '0 10px 25px -5px rgba(15, 23, 42, 0.2)' : '0 1px 3px rgba(0,0,0,0.02)'};
   color: ${p => p.$primary ? 'white' : C.text};
   position: relative;
-  transition: transform 0.2s;
-
-  &:hover { transform: translateY(-2px); }
 
   .header {
     display: flex; justify-content: space-between; align-items: flex-start;
@@ -105,7 +103,7 @@ const ActionCard = styled.div`
   cursor: pointer;
   transition: all 0.2s;
 
-  &:hover { border-color: ${C.blue}; transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+  &:hover { border-color: ${C.blue}; }
 
   .icon {
     width: 48px; height: 48px; border-radius: 12px; background: ${C.bg};
@@ -117,44 +115,122 @@ const ActionCard = styled.div`
 `;
 
 export const DashboardPage = () => {
-  // Data dummy statis — tanpa API call
-  const data = {
-    today: { revenue: 850000, total_bookings: 12 },
-    queue: { waiting: 3 },
-    month_revenue: 18500000,
-    popular_services: [
-      { service: 'Haircut Senior', count: 45 },
-      { service: 'Haircut Junior', count: 30 },
-      { service: 'Basic Coloring', count: 20 },
-      { service: 'Shaving', count: 15 },
-      { service: 'Reservasi', count: 10 },
-    ]
-  };
+  const [data, setData] = useState({
+    todayRevenue: 0,
+    todayExpense: 0,
+    todayBookings: 0,
+    monthRevenue: 0,
+    monthExpense: 0,
+    monthNetProfit: 0,
+    last7Days: [] as any[]
+  });
 
-  const adminName = "Superadmin";
+  const userStr = localStorage.getItem("admin_user");
+  const currentUser = userStr ? JSON.parse(userStr) : null;
+  const adminName = currentUser?.name || "Superadmin";
+
+  useEffect(() => {
+    const allReservations = Storage.get<any[]>('reservations', []);
+    const allExpenses = Storage.get<any[]>('expenses', []);
+    const today = new Date().toISOString().slice(0, 10);
+    const month = today.slice(0, 7);
+
+    // Last 7 Days setup
+    const last7DaysData = Array.from({length: 7}, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      return { 
+        fullDate: d.toISOString().slice(0,10), 
+        label: d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' }), 
+        rev: 0, 
+        exp: 0 
+      };
+    });
+
+    let todayRev = 0;
+    let monthRev = 0;
+    let todayBookings = 0;
+
+    allReservations.forEach(r => {
+      const isPaid = r.payment?.status === 'paid';
+      const amt = r.payment?.amount || 0;
+      
+      if (r.booking_date) {
+        if (r.booking_date === today) {
+           if(isPaid) todayRev += amt;
+           todayBookings++;
+        }
+        if (r.booking_date.startsWith(month)) {
+           if(isPaid) monthRev += amt;
+        }
+
+        if (isPaid) {
+          const dayMatch = last7DaysData.find(d => d.fullDate === r.booking_date);
+          if (dayMatch) dayMatch.rev += amt;
+        }
+      }
+    });
+
+    let todayExp = 0;
+    let monthExp = 0;
+
+    allExpenses.forEach(e => {
+       if (e.date) {
+         const amt = Number(e.amount) || 0;
+         if (e.date === today) todayExp += amt;
+         if (e.date.startsWith(month)) monthExp += amt;
+
+         const dayMatch = last7DaysData.find(d => d.fullDate === e.date);
+         if (dayMatch) dayMatch.exp += amt;
+       }
+    });
+
+    setData({
+      todayRevenue: todayRev,
+      todayExpense: todayExp,
+      todayBookings,
+      monthRevenue: monthRev,
+      monthExpense: monthExp,
+      monthNetProfit: monthRev - monthExp,
+      last7Days: last7DaysData
+    });
+    
+  }, []);
 
   const chartData = useMemo(() => {
-    if (!data?.popular_services) return { labels: [], data: [] };
+    if (!data?.last7Days) return { labels: [], revData: [], expData: [] };
     return {
-        labels: data.popular_services.map((s:any) => s.service),
-        data: data.popular_services.map((s:any) => s.count)
+        labels: data.last7Days.map((s:any) => s.label),
+        revData: data.last7Days.map((s:any) => s.rev),
+        expData: data.last7Days.map((s:any) => s.exp)
     };
   }, [data]);
 
   const barChartConfig = {
     labels: chartData.labels,
-    datasets: [{
-      label: 'Total Pesanan',
-      data: chartData.data,
-      backgroundColor: '#3B82F6', 
-      borderRadius: 6,
-      barThickness: 40,
-    }]
+    datasets: [
+      {
+        label: 'Pendapatan',
+        data: chartData.revData,
+        backgroundColor: '#10B981', 
+        borderRadius: 6,
+        barThickness: 18,
+      },
+      {
+        label: 'Pengeluaran',
+        data: chartData.expData,
+        backgroundColor: '#EF4444', 
+        borderRadius: 6,
+        barThickness: 18,
+      }
+    ]
   };
 
   const chartOptions = {
     responsive: true,
-    plugins: { legend: { display: false } },
+    plugins: { 
+      legend: { display: true, position: 'top' as const, labels: { usePointStyle: true, boxWidth: 8 } } 
+    },
     scales: {
       y: { border: { display: false }, grid: { color: '#f1f5f9' }, ticks: { color: '#94a3b8' } },
       x: { border: { display: false }, grid: { display: false }, ticks: { color: '#94a3b8' } }
@@ -174,54 +250,54 @@ export const DashboardPage = () => {
       <StatsGrid>
         <StatCard $primary>
           <div className="header">
-            <h3>Total pendapatan</h3>
+            <h3>Pendapatan Hari Ini</h3>
             <div className="icon-wrap"><ArrowUpRight size={16} /></div>
           </div>
           <div className="value">
-            Rp {data?.today?.revenue?.toLocaleString('id-ID') || 0}
+            Rp {data.todayRevenue.toLocaleString('id-ID')}
           </div>
-          <p className="sub">Pendapatan Hari Ini</p>
+          <p className="sub">{data.todayBookings} Pesanan Hari Ini</p>
         </StatCard>
 
         <StatCard>
           <div className="header">
-            <h3>Total pesanan</h3>
-            <div className="icon-wrap"><ArrowUpRight size={16} /></div>
+            <h3>Pengeluaran Hari Ini</h3>
+            <div className="icon-wrap"><ArrowDownRight size={16} color={C.accent} /></div>
           </div>
           <div className="value">
-            {data?.today?.total_bookings || 0}
+            Rp {data.todayExpense.toLocaleString('id-ID')}
           </div>
-          <p className="sub">Pesanan Hari Ini</p>
+          <p className="sub">Biaya Operasional Harian</p>
         </StatCard>
 
         <StatCard>
           <div className="header">
-            <h3>Antrean Aktif</h3>
-            <div className="icon-wrap"><ArrowUpRight size={16} /></div>
+            <h3>Pendapatan Bulan Ini</h3>
+            <div className="icon-wrap"><Wallet size={16} color={C.blue} /></div>
           </div>
           <div className="value">
-            {data?.queue?.waiting || 0}
+            Rp {data.monthRevenue.toLocaleString('id-ID')}
           </div>
-          <p className="sub">Pelanggan Menunggu</p>
+          <p className="sub">Total Omzet Bulan Ini</p>
         </StatCard>
 
         <StatCard>
           <div className="header">
-            <h3>Pendapatan Bulanan</h3>
-            <div className="icon-wrap"><ArrowUpRight size={16} /></div>
+            <h3>Laba Bersih Bulanan</h3>
+            <div className="icon-wrap"><DollarSign size={16} color={C.success} /></div>
           </div>
           <div className="value">
-            Rp {data?.month_revenue?.toLocaleString('id-ID') || 0}
+            Rp {data.monthNetProfit.toLocaleString('id-ID')}
           </div>
-          <p className="sub">Saldo Bulan Ini</p>
+          <p className="sub">Pendapatan - Pengeluaran Bulanan</p>
         </StatCard>
       </StatsGrid>
 
       <BigChartCard>
         <div className="header">
           <div>
-            <h3>Layanan Populer</h3>
-            <p>Distribusi penawaran layanan teratas Anda</p>
+            <h3>Arus Kas 7 Hari Terakhir</h3>
+            <p>Perbandingan pendapatan dan biaya operasional toko</p>
           </div>
           <div className="icon-wrap">
             <TrendingUp size={20} color={C.blue} />
@@ -238,18 +314,18 @@ export const DashboardPage = () => {
             <p>Tambah pelanggan walk-in</p>
           </div>
         </ActionCard>
-        <ActionCard onClick={() => window.location.href = '/admin/data'}>
-          <div className="icon"><Users size={24} /></div>
+        <ActionCard onClick={() => window.location.href = '/admin/expenses'}>
+          <div className="icon"><ShoppingCart size={24} /></div>
           <div>
-            <h4>Kelola Personel</h4>
-            <p>Perbarui data kapster</p>
+            <h4>Catat Pengeluaran</h4>
+            <p>Tambah data operasional</p>
           </div>
         </ActionCard>
-        <ActionCard onClick={() => window.location.href = '/admin/revenue'}>
-          <div className="icon"><Wallet size={24} /></div>
+        <ActionCard onClick={() => window.location.href = '/admin/profit'}>
+          <div className="icon"><DollarSign size={24} /></div>
           <div>
-            <h4>Laporan Toko</h4>
-            <p>Cek dan ekspor pendapatan</p>
+            <h4>Laba Bersih</h4>
+            <p>Lihat detail ringkasan</p>
           </div>
         </ActionCard>
       </div>

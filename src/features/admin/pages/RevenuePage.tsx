@@ -171,37 +171,44 @@ export const RevenuePage = () => {
   const [reportData, setReportData] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dateMonth, setDateMonth] = useState(new Date().toISOString().slice(0, 7)); // yyyy-MM
+  const [periodType, setPeriodType] = useState<'daily' | 'monthly' | 'yearly'>('monthly');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10)); // yyyy-mm-dd
   const [viewFilter, setViewFilter] = useState<'saya' | 'semua'>('saya');
   const shopName = "Barbershop";
 
   useEffect(() => {
     fetchReport();
-  }, [dateMonth, viewFilter]);
+  }, [periodType, selectedDate, viewFilter]);
 
   const fetchReport = () => {
     setLoading(true);
-    // filter reservations yang periodenya masuk bulan ini dan sudah dibayar 
     const allReservations = Storage.get<any[]>('reservations', []);
     
     const userStr = localStorage.getItem("admin_user");
     const currentUser = userStr ? JSON.parse(userStr) : null;
 
-    let monthlyBookings = allReservations.filter((r: any) => {
-      // asumsi format r.booking_date adalah YYYY-MM-DD
-      return typeof r.booking_date === 'string' && r.booking_date.startsWith(dateMonth) &&
-             r.payment?.status === 'paid';
+    let filteredBookings = allReservations.filter((r: any) => {
+      if (!r.booking_date || typeof r.booking_date !== 'string' || r.payment?.status !== 'paid') return false;
+      
+      if (periodType === 'daily') {
+        return r.booking_date === selectedDate;
+      } else if (periodType === 'monthly') {
+        return r.booking_date.startsWith(selectedDate.slice(0, 7));
+      } else if (periodType === 'yearly') {
+        return r.booking_date.startsWith(selectedDate.slice(0, 4));
+      }
+      return false;
     });
 
     if (viewFilter === 'saya' && currentUser) {
-      monthlyBookings = monthlyBookings.filter((r: any) => r.capster?.name?.toLowerCase() === currentUser.name.toLowerCase());
+      filteredBookings = filteredBookings.filter((r: any) => r.capster?.name?.toLowerCase() === currentUser.name.toLowerCase());
     }
 
-    setBookings(monthlyBookings);
+    setBookings(filteredBookings);
 
     setReportData({
-        total_revenue: monthlyBookings.reduce((sum: number, r: any) => sum + (r.payment?.amount || 0), 0),
-        total_bookings: monthlyBookings.length
+        total_revenue: filteredBookings.reduce((sum: number, r: any) => sum + (r.payment?.amount || 0), 0),
+        total_bookings: filteredBookings.length
     });
 
     setLoading(false);
@@ -221,13 +228,34 @@ export const RevenuePage = () => {
       };
     });
 
-    const worksheet = XLSX.utils.json_to_sheet(dataForExcel);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Pendapatan");
-    
-    XLSX.utils.sheet_add_aoa(worksheet, [["", "", "", "", "TOTAL", reportData?.total_revenue || 0]], { origin: -1 });
+    const headers = ['Tanggal & Jam', 'Kode Antrean', 'Nama Pelanggan', 'Kapster', 'Layanan', 'Pendapatan (Rp)'];
+    const rows = dataForExcel.map(r => [
+      r['Tanggal & Jam'], r['Kode Antrean'], r['Nama Pelanggan'], r['Kapster'], r['Layanan'], r['Pendapatan (Rp)']
+    ]);
 
-    XLSX.writeFile(workbook, `Laporan_${shopName.replace(/\s+/g, '')}_${dateMonth}.xlsx`);
+    const aoa = [
+      [`Laporan Pendapatan - Periode: ${selectedDate}`],
+      [],
+      headers,
+      ...rows,
+      ["", "", "", "", "TOTAL", reportData?.total_revenue || 0]
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(aoa);
+    const workbook = XLSX.utils.book_new();
+
+    const wscols = [
+      { wch: 22 }, 
+      { wch: 15 }, 
+      { wch: 25 }, 
+      { wch: 20 }, 
+      { wch: 30 }, 
+      { wch: 20 }  
+    ];
+    worksheet['!cols'] = wscols;
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Pendapatan");
+    XLSX.writeFile(workbook, `Laporan_Pendapatan_${shopName.replace(/\s+/g, '')}_${selectedDate}.xlsx`);
   };
 
   return (
@@ -241,7 +269,7 @@ export const RevenuePage = () => {
         <div className="label-group">
           <div className="icon-box"><Calculator size={26} /></div>
           <div>
-            <h3>Total Pendapatan Bulanan</h3>
+            <h3>Total Pendapatan</h3>
             <div className="value">Rp {reportData?.total_revenue?.toLocaleString('id-ID') || 0}</div>
           </div>
         </div>
@@ -254,7 +282,14 @@ export const RevenuePage = () => {
       <TableCard>
         <Toolbar>
            <div style={{display:'flex', gap:'16px', alignItems:'center'}}>
-             <input type="month" className="period-picker" value={dateMonth} onChange={e=>setDateMonth(e.target.value)} />
+             <select className="period-picker" value={periodType} onChange={e => setPeriodType(e.target.value as any)}>
+               <option value="daily">Harian</option>
+               <option value="monthly">Bulanan</option>
+               <option value="yearly">Tahunan</option>
+             </select>
+             {periodType === 'daily' && <input type="date" className="period-picker" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)} />}
+             {periodType === 'monthly' && <input type="month" className="period-picker" value={selectedDate.slice(0,7)} onChange={e=>setSelectedDate(e.target.value + '-01')} />}
+             {periodType === 'yearly' && <input type="number" min="2000" max="2100" className="period-picker" value={selectedDate.slice(0,4)} onChange={e=>setSelectedDate(e.target.value + '-01-01')} />}
              <div className="view-toggle">
                <button className={viewFilter === 'saya' ? 'active' : ''} onClick={() => setViewFilter('saya')}>Pendapatan Saya</button>
                <button className={viewFilter === 'semua' ? 'active' : ''} onClick={() => setViewFilter('semua')}>Pendapatan Semua</button>
