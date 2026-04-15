@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import styled from 'styled-components';
-import { Storage } from '@/services/storage';
+import { Storage, currentUser } from '@/services/storage';
 import { Plus, X, Search, Calendar, CheckCircle2 } from 'lucide-react';
 
 const C = {
@@ -37,7 +37,7 @@ const StatsGrid = styled.div`
   gap: 20px;
   margin-bottom: 32px;
   @media(max-width: 1024px){ grid-template-columns: repeat(2, 1fr); }
-  @media(max-width: 640px){ grid-template-columns: 1fr; }
+  @media(max-width: 480px){ grid-template-columns: 1fr; }
 `;
 
 const StatCard = styled.div<{ $color: string, $bg: string }>`
@@ -199,8 +199,10 @@ const ModalOverlay = styled.div`
 `;
 
 const ModalContent = styled.div`
-  background: white; border-radius: 20px; width: 100%; max-width: 440px;
+  background: white; border-radius: 20px; width: 90%; max-width: 440px;
   padding: 32px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+  
+  @media (max-width: 480px) { padding: 24px; }
   
   h2 { font-size: 20px; font-weight: 800; margin-bottom: 24px; color: ${C.primary}; display: flex; justify-content: space-between; align-items: center; }
 `;
@@ -244,10 +246,6 @@ export const ReservationManagePage = () => {
       setCapsters(caps);
       setServices(svcs);
 
-      const userStr = localStorage.getItem("admin_user");
-      let currentUser = null;
-      if (userStr) currentUser = JSON.parse(userStr);
-
       if (caps.length > 0) {
         if (currentUser && currentUser.role === 'kapster') {
            const match = caps.find((c: any) => c.name.toLowerCase() === currentUser.name.toLowerCase());
@@ -266,8 +264,6 @@ export const ReservationManagePage = () => {
     try {
       setLoading(true);
       const allReservations = Storage.get('reservations', []);
-      const userStr = localStorage.getItem("admin_user");
-      const currentUser = userStr ? JSON.parse(userStr) : null;
       
       let filtered = allReservations.filter((r: any) => r.booking_date === dateFilter);
       if (currentUser?.role === 'kapster') {

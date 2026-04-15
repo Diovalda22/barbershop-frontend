@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { Storage } from '@/services/storage';
+import { Storage, currentUser } from '@/services/storage';
 import { Download, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -76,6 +76,7 @@ const MainCard = styled.div`
   border: 1px solid ${C.border};
   box-shadow: 0 1px 3px rgba(0,0,0,0.02);
   padding: 28px;
+  @media (max-width: 768px) { padding: 20px; }
 `;
 
 const Toolbar = styled.div`
@@ -122,6 +123,19 @@ const Toolbar = styled.div`
       }
     }
   }
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    align-items: stretch;
+    .filter-group {
+      flex-direction: column !important;
+      align-items: stretch !important;
+    }
+    .view-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+  }
 `;
 
 const ExportBtn = styled.button`
@@ -137,6 +151,9 @@ const ExportBtn = styled.button`
   gap: 8px;
   transition: all 0.2s;
   &:hover { opacity: 0.9; transform: translateY(-1px); }
+  @media (max-width: 1024px) {
+    justify-content: center;
+  }
 `;
 
 const BreakdownList = styled.div`
@@ -178,8 +195,6 @@ export const NetProfitPage = () => {
     setLoading(true);
     const allReservations = Storage.get<any[]>('reservations', []);
     const allExpenses = Storage.get<any[]>('expenses', []);
-    const userStr = localStorage.getItem("admin_user");
-    const currentUser = userStr ? JSON.parse(userStr) : null;
 
     // Filter Revenue
     let filRev = allReservations.filter((r: any) => {
@@ -268,7 +283,7 @@ export const NetProfitPage = () => {
 
       <MainCard style={{marginBottom: '32px'}}>
         <Toolbar>
-           <div style={{display:'flex', gap:'16px', alignItems:'center'}}>
+           <div className="filter-group" style={{display:'flex', gap:'16px', alignItems:'center'}}>
              <select className="period-picker" value={periodType} onChange={e => setPeriodType(e.target.value as any)}>
                <option value="daily">Harian</option>
                <option value="monthly">Bulanan</option>
