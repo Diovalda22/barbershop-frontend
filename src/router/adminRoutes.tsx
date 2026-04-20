@@ -7,6 +7,7 @@ import { RevenuePage } from "@/features/admin/pages/RevenuePage";
 import { ExpensePage } from "@/features/admin/pages/ExpensePage";
 import { NetProfitPage } from "@/features/admin/pages/NetProfitPage";
 import { DataManagePage } from "@/features/admin/pages/DataManagePage";
+import { AdminProfilePage } from "@/features/admin/pages/AdminProfilePage";
 
 import { AdminLoginPage } from "@/features/admin/pages/AdminLoginPage";
 import { AdminRegisterPage } from "@/features/admin/pages/AdminRegisterPage";
@@ -25,6 +26,7 @@ export const adminRoutes: RouteObject[] = [
       { path: "expenses", element: <ExpensePage /> },
       { path: "profit", element: <NetProfitPage /> },
       { path: "data", element: <DataManagePage /> },
+      { path: "profile", element: <AdminProfilePage /> },
     ],
   },
 ];

@@ -1,12 +1,12 @@
 import { useEffect, useState, useRef } from 'react';
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { 
   PieChart, CalendarDays, Clock, Wallet, Users, LogOut, Bell, Menu, X, ShoppingCart, DollarSign
 } from 'lucide-react';
-import { initAdminStorage } from '@/services/storage';
+import { currentUser } from '@/services/storage';
 
 const C = {
   primary: '#0F172A',
@@ -88,7 +88,10 @@ const MobileMenuBtn = styled.button`
 `;
 
 const LeftSection = styled.div` display: flex; align-items: center; gap: 16px; `;
-const PageTitle = styled.h2` font-size: 18px; font-weight: 700; color: ${C.text}; margin: 0; `;
+const PageTitle = styled.h2` 
+  font-size: 18px; font-weight: 700; color: ${C.text}; margin: 0; 
+  @media (max-width: 480px) { font-size: 16px; }
+`;
 
 const TopActions = styled.div` display: flex; align-items: center; gap: 16px; position: relative; `;
 const DateTimeBox = styled.div`
@@ -123,13 +126,15 @@ const NotifPopover = styled.div`
   .footer { padding: 12px; text-align: center; border-top: 1px solid ${C.border}; font-size: 12px; color: ${C.textMuted}; font-weight: 600; cursor: pointer; &:hover { color: ${C.primary}; } }
 `;
 
-const ContentScroller = styled.div` flex: 1; overflow-y: auto; padding: 32px; `;
+const ContentScroller = styled.div`
+  flex: 1; overflow-y: auto; padding: 32px;
+  @media (max-width: 768px) { padding: 16px; }
+`;
 
 export const AdminLayout = () => {
   const location = useLocation();
-  const userStr = localStorage.getItem("admin_user");
-  const user = userStr ? JSON.parse(userStr) : { name: 'Super Admin', role: 'admin' };
-  const profile = { name: user.name, barbershop: user.role === 'kapster' ? 'Pointcut Kapster' : 'Pointcut Staff' };
+  const navigate = useNavigate();
+  const profile = { name: currentUser.name, barbershop: currentUser.role === 'kapster' ? 'Pointcut Kapster' : 'Pointcut Staff' };
   const [currentTime, setCurrentTime] = useState(new Date());
   const [notifs] = useState<any[]>([]);
   const [showNotifs, setShowNotifs] = useState(false);
@@ -137,7 +142,6 @@ export const AdminLayout = () => {
   const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    initAdminStorage();
     document.title = 'BarberFlow';
     const link: any = document.querySelector("link[rel~='icon']");
     if (link) link.href = '/barberFlow.png';
@@ -158,7 +162,7 @@ export const AdminLayout = () => {
   const handleLogout = () => { if(confirm('Yakin ingin keluar?')) { window.location.href = '/'; } }
 
   const getPageTitle = (path: string) => {
-    if (path === '/admin') return 'Ringkasan Dashboard';
+    if (path === '/admin') return 'Dashboard';
     if (path === '/admin/reservations') return 'Manajemen Pesanan';
     if (path === '/admin/slots') return 'Manajemen Jadwal';
     if (path === '/admin/revenue') return 'Analisis Pendapatan';
@@ -221,7 +225,7 @@ export const AdminLayout = () => {
               </NotifPopover>
             )}
             
-            <AdminInfo onClick={() => alert(`Profil Admin: ${profile?.name || 'Loading...'}`)}>
+            <AdminInfo onClick={() => navigate('/admin/profile')}>
               <div className="details">
                 <span>{profile?.name || 'Super Admin'}</span>
                 <small>{profile?.barbershop || 'BarberFlow Staff'}</small>

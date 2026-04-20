@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { Storage } from '@/services/storage';
+import { Storage, currentUser } from '@/services/storage';
 import * as XLSX from 'xlsx';
 import { Download, ShoppingCart, TrendingDown, Plus, Trash2 } from 'lucide-react';
 
@@ -64,6 +64,12 @@ const ExpenseCard = styled.div`
     background: ${C.dangerBg};
     border-radius: 12px;
   }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
 `;
 
 const FormCard = styled.div`
@@ -111,6 +117,7 @@ const TableCard = styled.div`
   box-shadow: 0 1px 3px rgba(0,0,0,0.02);
   overflow: hidden;
   padding: 28px;
+  @media (max-width: 768px) { padding: 20px; }
 `;
 
 const Toolbar = styled.div`
@@ -157,6 +164,19 @@ const Toolbar = styled.div`
       }
     }
   }
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    align-items: stretch;
+    .filter-group {
+      flex-direction: column !important;
+      align-items: stretch !important;
+    }
+    .view-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+  }
 `;
 
 const ExportBtn = styled.button`
@@ -172,6 +192,22 @@ const ExportBtn = styled.button`
   gap: 8px;
   transition: all 0.2s;
   &:hover { opacity: 0.9; transform: translateY(-1px); }
+  @media (max-width: 1024px) {
+    justify-content: center;
+  }
+`;
+
+const TableContainer = styled.div`
+  overflow-x: auto;
+  margin: 0 -28px;
+  padding: 0 28px;
+  &::-webkit-scrollbar { height: 8px; }
+  &::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+  
+  @media (max-width: 768px) {
+    margin: 0 -20px;
+    padding: 0 20px;
+  }
 `;
 
 const Table = styled.table`
@@ -226,8 +262,6 @@ export const ExpensePage = () => {
   const fetchReport = () => {
     setLoading(true);
     const allExpenses = Storage.get<any[]>('expenses', []);
-    const userStr = localStorage.getItem("admin_user");
-    const currentUser = userStr ? JSON.parse(userStr) : null;
     
     let filteredExpenses = allExpenses.filter((r: any) => {
       if (!r.date || typeof r.date !== 'string') return false;
@@ -267,9 +301,6 @@ export const ExpensePage = () => {
   const handleAddExpense = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName || !newAmount || !newDate) return alert('Lengkapi semua data');
-
-    const userStr = localStorage.getItem("admin_user");
-    const currentUser = userStr ? JSON.parse(userStr) : null;
 
     const allExp = Storage.get<any[]>('expenses', []);
     const newExp = {
@@ -377,7 +408,7 @@ export const ExpensePage = () => {
 
       <TableCard>
         <Toolbar>
-           <div style={{display:'flex', gap:'16px', alignItems:'center'}}>
+           <div className="filter-group" style={{display:'flex', gap:'16px', alignItems:'center'}}>
              <select className="period-picker" value={periodType} onChange={e => setPeriodType(e.target.value as any)}>
                <option value="daily">Harian</option>
                <option value="monthly">Bulanan</option>
@@ -402,33 +433,35 @@ export const ExpensePage = () => {
               <span style={{ fontSize: '14px', color: C.textMuted }}>Memuat Data...</span>
           </div>
         ) : (
-          <Table>
-            <thead>
-              <tr>
-                <th>Tanggal</th>
-                <th>Keterangan</th>
-                <th>Pelaksana</th>
-                <th>Total Harga</th>
-                <th style={{textAlign: 'right'}}>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {expenses.length === 0 && (
-                <tr><td colSpan={4} style={{textAlign:'center', color:C.textMuted, padding:'48px'}}>Data tidak ditemukan untuk periode ini.</td></tr>
-              )}
-              {expenses.map(r => (
-                <tr key={r.id}>
-                  <td style={{ color: C.textMuted }}>{r.date}</td>
-                  <td><div style={{fontWeight:700}}>{r.name}</div></td>
-                  <td style={{fontSize:'13px'}}>{r.created_by || '-'}</td>
-                  <td><span style={{fontWeight:800, color:C.danger}}>Rp {r.amount?.toLocaleString('id-ID')}</span></td>
-                  <td style={{textAlign: 'right'}}>
-                    <button className="btn-delete" onClick={() => handleDelete(r.id)}><Trash2 size={16} /></button>
-                  </td>
+          <TableContainer>
+            <Table>
+              <thead>
+                <tr>
+                  <th>Tanggal</th>
+                  <th>Keterangan</th>
+                  <th>Pelaksana</th>
+                  <th>Total Harga</th>
+                  <th style={{textAlign: 'right'}}>Aksi</th>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
+              </thead>
+              <tbody>
+                {expenses.length === 0 && (
+                  <tr><td colSpan={5} style={{textAlign:'center', color:C.textMuted, padding:'48px'}}>Data tidak ditemukan untuk periode ini.</td></tr>
+                )}
+                {expenses.map(r => (
+                  <tr key={r.id}>
+                    <td style={{ color: C.textMuted }}>{r.date}</td>
+                    <td><div style={{fontWeight:700}}>{r.name}</div></td>
+                    <td style={{fontSize:'13px'}}>{r.created_by || '-'}</td>
+                    <td><span style={{fontWeight:800, color:C.danger}}>Rp {r.amount?.toLocaleString('id-ID')}</span></td>
+                    <td style={{textAlign: 'right'}}>
+                      <button className="btn-delete" onClick={() => handleDelete(r.id)}><Trash2 size={16} /></button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </TableContainer>
         )}
       </TableCard>
     </div>

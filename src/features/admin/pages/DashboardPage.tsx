@@ -6,7 +6,7 @@ import {
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import { ArrowUpRight, ArrowDownRight, TrendingUp, Plus, Wallet, DollarSign, ShoppingCart } from 'lucide-react';
-import { Storage } from '@/services/storage';
+import { Storage, currentUser } from '@/services/storage';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
@@ -27,6 +27,11 @@ const TopRow = styled.div`
   justify-content: space-between;
   align-items: flex-end;
   margin-bottom: 32px;
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
 `;
 
 const Greeting = styled.div`
@@ -41,8 +46,8 @@ const StatsGrid = styled.div`
   margin-bottom: 32px;
   
   @media(max-width: 1200px){ gap: 16px; }
-  @media(max-width: 1024px){ grid-template-columns: repeat(2, 1fr); }
-  @media(max-width: 640px){ grid-template-columns: 1fr; }
+  @media(max-width: 1024px){ grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  @media(max-width: 480px){ grid-template-columns: 1fr; }
 `;
 
 const StatCard = styled.div<{ $primary?: boolean }>`
@@ -114,6 +119,14 @@ const ActionCard = styled.div`
   p { font-size: 13px; color: ${C.textMuted}; }
 `;
 
+const ActionGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  @media (max-width: 1024px) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 640px) { grid-template-columns: 1fr; }
+`;
+
 export const DashboardPage = () => {
   const [data, setData] = useState({
     todayRevenue: 0,
@@ -125,9 +138,7 @@ export const DashboardPage = () => {
     last7Days: [] as any[]
   });
 
-  const userStr = localStorage.getItem("admin_user");
-  const currentUser = userStr ? JSON.parse(userStr) : null;
-  const adminName = currentUser?.name || "Superadmin";
+  const adminName = currentUser?.name || "Kapster";
 
   useEffect(() => {
     const allReservations = Storage.get<any[]>('reservations', []);
@@ -303,10 +314,12 @@ export const DashboardPage = () => {
             <TrendingUp size={20} color={C.blue} />
           </div>
         </div>
-        <Bar data={barChartConfig} options={chartOptions as any} height={80} />
+        <div style={{ position: 'relative', height: '300px' }}>
+          <Bar data={barChartConfig} options={{ ...chartOptions, maintainAspectRatio: false } as any} />
+        </div>
       </BigChartCard>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+      <ActionGrid>
         <ActionCard onClick={() => window.location.href = '/admin/reservations'}>
           <div className="icon"><Plus size={24} /></div>
           <div>
@@ -328,7 +341,7 @@ export const DashboardPage = () => {
             <p>Lihat detail ringkasan</p>
           </div>
         </ActionCard>
-      </div>
+      </ActionGrid>
     </div>
   );
 };

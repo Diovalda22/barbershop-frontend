@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { Storage } from '@/services/storage';
+import { Storage, currentUser } from '@/services/storage';
 import * as XLSX from 'xlsx';
 import { Download, Calculator, TrendingUp } from 'lucide-react';
 
@@ -64,8 +64,13 @@ const RevenueCard = styled.div`
     background: ${C.successBg};
     border-radius: 12px;
   }
-`;
 
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+`;
 const TableCard = styled.div`
   background: white;
   border-radius: 20px;
@@ -73,8 +78,8 @@ const TableCard = styled.div`
   box-shadow: 0 1px 3px rgba(0,0,0,0.02);
   overflow: hidden;
   padding: 28px;
+  @media (max-width: 768px) { padding: 20px; }
 `;
-
 const Toolbar = styled.div`
   display: flex;
   justify-content: space-between;
@@ -119,6 +124,19 @@ const Toolbar = styled.div`
       }
     }
   }
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    align-items: stretch;
+    .filter-group {
+      flex-direction: column !important;
+      align-items: stretch !important;
+    }
+    .view-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+  }
 `;
 
 const ExportBtn = styled.button`
@@ -135,6 +153,22 @@ const ExportBtn = styled.button`
   transition: all 0.2s;
   
   &:hover { opacity: 0.9; transform: translateY(-1px); }
+  @media (max-width: 1024px) {
+    justify-content: center;
+  }
+`;
+
+const TableContainer = styled.div`
+  overflow-x: auto;
+  margin: 0 -28px;
+  padding: 0 28px;
+  &::-webkit-scrollbar { height: 8px; }
+  &::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+  
+  @media (max-width: 768px) {
+    margin: 0 -20px;
+    padding: 0 20px;
+  }
 `;
 
 const Table = styled.table`
@@ -183,9 +217,6 @@ export const RevenuePage = () => {
   const fetchReport = () => {
     setLoading(true);
     const allReservations = Storage.get<any[]>('reservations', []);
-    
-    const userStr = localStorage.getItem("admin_user");
-    const currentUser = userStr ? JSON.parse(userStr) : null;
 
     let filteredBookings = allReservations.filter((r: any) => {
       if (!r.booking_date || typeof r.booking_date !== 'string' || r.payment?.status !== 'paid') return false;
@@ -281,7 +312,7 @@ export const RevenuePage = () => {
 
       <TableCard>
         <Toolbar>
-           <div style={{display:'flex', gap:'16px', alignItems:'center'}}>
+           <div className="filter-group" style={{display:'flex', gap:'16px', alignItems:'center'}}>
              <select className="period-picker" value={periodType} onChange={e => setPeriodType(e.target.value as any)}>
                <option value="daily">Harian</option>
                <option value="monthly">Bulanan</option>
@@ -305,34 +336,36 @@ export const RevenuePage = () => {
               <span style={{ fontSize: '14px', color: C.textMuted }}>Memuat Data...</span>
           </div>
         ) : (
-          <Table>
-            <thead>
-              <tr>
-                <th>Tanggal & Jam</th>
-                <th>Kode</th>
-                <th>Nama Pelanggan</th>
-                <th>Kapster</th>
-                <th>Total Harga</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bookings.length === 0 && (
-                <tr><td colSpan={5} style={{textAlign:'center', color:C.textMuted, padding:'48px'}}>Data tidak ditemukan untuk periode ini.</td></tr>
-              )}
-              {bookings.map(r => (
-                <tr key={r.id}>
-                  <td style={{ color: C.textMuted }}>{r.booking_date} {r.start_time}</td>
-                  <td><span style={{ fontWeight: 800 }}>{r.queue_number || '-'}</span></td>
-                  <td>
-                    <div style={{fontWeight:700}}>{r.customer_name}</div>
-                    <div style={{fontSize:'12px', color:C.textMuted}}>{r.type}</div>
-                  </td>
-                  <td>{r.capster?.name || '-'}</td>
-                  <td><span style={{fontWeight:800, color:C.success}}>Rp {r.payment?.amount?.toLocaleString('id-ID')}</span></td>
+          <TableContainer>
+            <Table>
+              <thead>
+                <tr>
+                  <th>Tanggal & Jam</th>
+                  <th>Kode</th>
+                  <th>Nama Pelanggan</th>
+                  <th>Kapster</th>
+                  <th>Total Harga</th>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
+              </thead>
+              <tbody>
+                {bookings.length === 0 && (
+                  <tr><td colSpan={5} style={{textAlign:'center', color:C.textMuted, padding:'48px'}}>Data tidak ditemukan untuk periode ini.</td></tr>
+                )}
+                {bookings.map(r => (
+                  <tr key={r.id}>
+                    <td style={{ color: C.textMuted }}>{r.booking_date} {r.start_time}</td>
+                    <td><span style={{ fontWeight: 800 }}>{r.queue_number || '-'}</span></td>
+                    <td>
+                      <div style={{fontWeight:700}}>{r.customer_name}</div>
+                      <div style={{fontSize:'12px', color:C.textMuted}}>{r.type}</div>
+                    </td>
+                    <td>{r.capster?.name || '-'}</td>
+                    <td><span style={{fontWeight:800, color:C.success}}>Rp {r.payment?.amount?.toLocaleString('id-ID')}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </TableContainer>
         )}
       </TableCard>
     </div>

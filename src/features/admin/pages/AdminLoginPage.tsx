@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import styled, { createGlobalStyle } from 'styled-components'
 import { LogIn, Lock, Mail, ArrowLeft } from 'lucide-react'
+import { currentUser } from '@/services/storage'
 
 const C = {
   red: '#C0392B',
@@ -130,22 +131,20 @@ export function AdminLoginPage() {
     setIsLoading(true)
     setError('')
     
-    // Auth Simulation
+    // Auth Simulation — FE murni, tidak ada penyimpanan sesi
     const email = form.email.toLowerCase()
-    let role = 'kapster'
-    let name = ''
     
     if (email === 'munying@pointcut.com') {
-      name = 'Munying'
+      currentUser.name = 'Munying'
+      currentUser.email = email
     } else if (email === 'sani@pointcut.com') {
-      name = 'Sani'
+      currentUser.name = 'Sani'
+      currentUser.email = email
     } else {
       setError('Email tidak dikenali sebagai Kapster.')
       setIsLoading(false)
       return
     }
-    
-    localStorage.setItem("admin_user", JSON.stringify({ email, role, name }))
 
     navigate('/admin')
     setIsLoading(false)

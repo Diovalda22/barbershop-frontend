@@ -410,21 +410,21 @@ export function ReservationPage() {
           <li>
             <button
               onClick={goHome}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#fff",
-                fontFamily: C.fB,
-                fontSize: "14px",
-                fontWeight: 500,
-                padding: "4px 0",
-                transition: ".2s",
-                cursor: "pointer",
-              }}
+              style={{ background: "none", border: "none", color: "#fff", fontFamily: C.fB, fontSize: "14px", fontWeight: 500, padding: "4px 0", transition: ".2s", cursor: "pointer" }}
               onMouseEnter={(e) => (e.currentTarget.style.color = C.gold)}
               onMouseLeave={(e) => (e.currentTarget.style.color = "#fff")}
             >
               Home
+            </button>
+          </li>
+          <li>
+            <button
+               onClick={() => navigate('/user/profile')}
+               style={{ background: "none", border: "none", color: "#fff", fontFamily: C.fB, fontSize: "14px", fontWeight: 500, padding: "4px 0", transition: ".2s", cursor: "pointer" }}
+               onMouseEnter={(e) => (e.currentTarget.style.color = C.gold)}
+               onMouseLeave={(e) => (e.currentTarget.style.color = "#fff")}
+            >
+              Profile & History
             </button>
           </li>
         </ul>
@@ -499,21 +499,15 @@ export function ReservationPage() {
         >
           <button
             onClick={goHome}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#fff",
-              fontFamily: C.fB,
-              fontSize: "16px",
-              fontWeight: 500,
-              padding: "14px 0",
-              textAlign: "left",
-              borderBottom: "1px solid rgba(255,255,255,.06)",
-              transition: ".2s",
-              cursor: "pointer",
-            }}
+            style={{ background: "none", border: "none", color: "#fff", fontFamily: C.fB, fontSize: "16px", fontWeight: 500, padding: "14px 0", textAlign: "left", borderBottom: "1px solid rgba(255,255,255,.06)", transition: ".2s", cursor: "pointer" }}
           >
             Home
+          </button>
+          <button
+            onClick={() => navigate('/user/profile')}
+            style={{ background: "none", border: "none", color: "#fff", fontFamily: C.fB, fontSize: "16px", fontWeight: 500, padding: "14px 0", textAlign: "left", borderBottom: "1px solid rgba(255,255,255,.06)", transition: ".2s", cursor: "pointer" }}
+          >
+            Profile & History
           </button>
           <button
             className="btn-outline btn-outline-light"

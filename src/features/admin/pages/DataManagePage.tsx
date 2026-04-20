@@ -28,6 +28,7 @@ const Section = styled.div`
   box-shadow: 0 1px 3px rgba(0,0,0,0.02);
   padding: 32px;
   margin-bottom: 32px;
+  @media (max-width: 768px) { padding: 20px; }
 
   h3 { 
     display: flex;
@@ -47,6 +48,7 @@ const FormRow = styled.div`
   gap: 16px;
   margin-bottom: 24px;
   flex-wrap: wrap;
+  @media (max-width: 640px) { flex-direction: column; align-items: stretch; }
 `;
 
 const InputGroup = styled.div`
@@ -89,6 +91,7 @@ const ActionBtn = styled.button<{ $danger?: boolean, $outline?: boolean }>`
     color: ${p => p.$danger ? 'white' : p.$outline ? C.primary : 'white'};
     transform: translateY(-1px);
   }
+  @media (max-width: 640px) { align-self: stretch; justify-content: center; }
 `;
 
 const ListItem = styled.div`
@@ -98,6 +101,7 @@ const ListItem = styled.div`
   padding: 16px 24px;
   background: white;
   border-bottom: 1px solid ${C.border};
+  @media (max-width: 640px) { flex-direction: column; align-items: flex-start; gap: 16px; padding: 20px; }
   
   &:last-child { border-bottom: none; }
   

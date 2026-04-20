@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Storage } from "@/services/storage";
 
@@ -26,7 +26,7 @@ const NAV = [
   { l: "Prices", id: "prices" },
   { l: "Team", id: "team" },
   { l: "Tutorial", id: "tutorial" },
-  { l: "Gallery", id: "gallery" },
+  { l: "Testimoni", id: "testimonials" },
 ];
 const HOURS = [
   ["SENIN", "13:30 – 21:00"],
@@ -139,11 +139,16 @@ export function LandingPage() {
   const [active, setActive] = useState("home");
   const [acc, setAcc] = useState<number | null>(null);
   const [howTab, setHowTab] = useState<"online" | "offline">("online");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLLIElement>(null);
+  const [isLogged, setIsLogged] = useState(false);
 
   useEffect(() => {
     document.title = "Pointcut Hairstudio";
     const link: any = document.querySelector("link[rel~='icon']");
     if (link) link.href = "/logopointcut.png";
+
+    setIsLogged(!!localStorage.getItem("customer_token"));
 
     const id = "pc-f";
     if (!document.getElementById(id)) {
@@ -171,7 +176,18 @@ export function LandingPage() {
     try {
       setCapsters(Storage.get<any[]>("capsters", []));
     } catch {}
-    return () => window.removeEventListener("scroll", h);
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      window.removeEventListener("scroll", h);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   const go = (id: string) => {
@@ -212,6 +228,54 @@ export function LandingPage() {
         .g-img:hover{transform:scale(1.02);box-shadow:0 8px 24px rgba(0,0,0,.5)}
         .bsoc-btn{background:#c8a96e;color:#0d0d0d;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:12px;text-decoration:none;transition:.2s;font-weight:700}
         .bsoc-btn:hover{background:#e6c98a}
+        
+        .dropdown-menu {
+          position: absolute;
+          top: 100%;
+          left: 50%;
+          transform: translateX(-50%) translateY(10px);
+          background: #1f1f1f;
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 4px;
+          padding: 8px 0;
+          min-width: 140px;
+          opacity: 0;
+          visibility: hidden;
+          transition: all 0.2s ease;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .dropdown-menu.show {
+          opacity: 1;
+          visibility: visible;
+          transform: translateX(-50%) translateY(0);
+        }
+        .dropdown-item {
+          display: block;
+          padding: 10px 20px;
+          color: rgba(255,255,255,0.8);
+          font-size: 13px;
+          font-family: 'DM Sans', sans-serif;
+          text-decoration: none;
+          background: none;
+          border: none;
+          width: 100%;
+          text-align: left;
+          transition: color 0.2s, background 0.2s;
+        }
+        .dropdown-item:hover {
+          color: #c8a96e;
+          background: rgba(255,255,255,0.03);
+        }
+        
+        .m-dropdown-wrap {
+           margin-top: 8px;
+           margin-bottom: 8px;
+           padding-left: 16px;
+           border-left: 2px solid rgba(200, 169, 110, 0.3);
+           display: flex;
+           flex-direction: column;
+           gap: 8px;
+        }
         @media(max-width:768px){
           .nav-links{display:none!important}
           .nav-cta{display:none!important}
@@ -258,8 +322,29 @@ export function LandingPage() {
               </button>
             </li>
           ))}
+          
+          <li className="relative" ref={dropdownRef} style={{position: 'relative'}}>
+            <button
+               className="nav-link nav-link-inactive flex items-center gap-1"
+               style={{ display: "flex", alignItems: "center", gap: "4px" }}
+               onClick={() => setDropdownOpen(!dropdownOpen)}
+            >
+               Gallery
+               <svg style={{width:'10px', height:'10px', marginLeft:'2px', transform: dropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s'}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
+            </button>
+            
+            <div className={`dropdown-menu ${dropdownOpen ? 'show' : ''}`}>
+               <button className="dropdown-item" onClick={() => navigate('/gallery#video-section')}>Videos</button>
+               <button className="dropdown-item" onClick={() => navigate('/gallery#photo-section')}>Photos</button>
+            </div>
+          </li>
         </ul>
-        <div className="nav-cta" style={{ display: "block" }}>
+        <div className="nav-cta" style={{ display: "flex", gap: "12px" }}>
+          {isLogged && (
+             <button className="btn-gold" onClick={() => navigate('/user/profile')} style={{background: 'transparent', color: '#c8a96e', border: '1px solid #c8a96e'}}>
+               PROFILE
+             </button>
+          )}
           <button className="btn-gold" onClick={startBooking}>
             RESERVASI
           </button>
@@ -334,7 +419,23 @@ export function LandingPage() {
               {n.l}
             </button>
           ))}
+          
+          <div className="mnl" style={{borderBottom: 'none', cursor: 'default'}}>Gallery</div>
+          <div className="m-dropdown-wrap">
+             <button className="nav-link nav-link-inactive" style={{textAlign: 'left'}} onClick={() => navigate('/gallery#photo-section')}>Photo Gallery</button>
+             <button className="nav-link nav-link-inactive" style={{textAlign: 'left'}} onClick={() => navigate('/gallery#video-section')}>Video Shorts</button>
+          </div>
+
           <div style={{ marginTop: "20px" }}>
+            {isLogged && (
+               <button
+                 className="btn-gold w-full"
+                 style={{ width: "100%", marginBottom: "12px", background: 'transparent', color: '#c8a96e', border: '1px solid #c8a96e' }}
+                 onClick={() => navigate('/user/profile')}
+               >
+                 PROFILE & HISTORY
+               </button>
+            )}
             <button
               className="btn-gold w-full"
               style={{ width: "100%" }}
@@ -1276,78 +1377,8 @@ export function LandingPage() {
           })()}
       </section>
 
-      {/* Gallery */}
-      <section
-        id="gallery"
-        style={{ background: C.dark2, padding: "70px 5% 90px" }}
-      >
-        <p
-          className="font-dm"
-          style={{
-            fontSize: "11px",
-            letterSpacing: "4px",
-            textTransform: "uppercase",
-            color: C.gold,
-            marginBottom: "10px",
-            textAlign: "center",
-          }}
-        >
-          Portfolio Kami
-        </p>
-        <div
-          style={{
-            textAlign: "center",
-            fontSize: "20px",
-            margin: "8px 0 20px",
-            opacity: 0.5,
-            color: "#fff",
-          }}
-        >
-          ✂
-        </div>
-        <h2
-          className="font-serif text-center"
-          style={{ fontSize: "clamp(26px,4vw,40px)", color: "#fff" }}
-        >
-          GALERI POINTCUT
-        </h2>
-        <p
-          className="text-center"
-          style={{
-            color: C.muted,
-            fontSize: "14px",
-            marginBottom: "36px",
-            marginTop: "8px",
-          }}
-        >
-          Lihat hasil sentuhan ahli kapster kami untuk pelanggan setia.
-        </p>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3,1fr)",
-            gap: "12px",
-            marginTop: "36px",
-          }}
-        >
-          {[
-            "/gallery_haircut.png",
-            "/gallery_coloring.png",
-            "/gallery_perm.png",
-            "/gallery_shaving.png",
-            "/gallery_haircut.png",
-            "/gallery_coloring.png",
-            "/gallery_perm.png",
-            "/gallery_shaving.png",
-            "/gallery_haircut.png",
-          ].map((src, i) => (
-            <img key={i} src={src} alt="gallery" className="g-img" />
-          ))}
-        </div>
-      </section>
-
       {/* Testimonials */}
-      <section style={{ background: C.dark, padding: "70px 5%" }}>
+      <section id="testimonials" style={{ background: C.dark, padding: "70px 5%" }}>
         <p
           className="font-dm"
           style={{

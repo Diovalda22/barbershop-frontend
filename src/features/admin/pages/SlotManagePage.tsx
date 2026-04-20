@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { Storage } from '@/services/storage';
+import { Storage, currentUser } from '@/services/storage';
 import { Calendar, ShieldAlert, CheckCircle2, Lock } from 'lucide-react';
 
 const C = {
@@ -31,6 +31,7 @@ const Toolbar = styled.div`
   border: 1px solid ${C.border};
   box-shadow: 0 1px 3px rgba(0,0,0,0.02);
   align-items: center;
+  @media (max-width: 768px) { flex-direction: column; align-items: stretch; padding: 20px; }
 
   .input-label {
     display: flex;
@@ -83,6 +84,7 @@ const TimeGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 20px;
+  @media (max-width: 480px) { grid-template-columns: repeat(2, 1fr); gap: 12px; }
 `;
 
 const SlotBtn = styled.button<{ $locked: boolean }>`
@@ -144,10 +146,6 @@ export const SlotManagePage = () => {
       const caps = Storage.get<any[]>('capsters', []);
       setCapsters(caps);
       
-      const userStr = localStorage.getItem("admin_user");
-      let currentUser = null;
-      if (userStr) currentUser = JSON.parse(userStr);
-
       if (caps.length > 0) {
         if (currentUser && currentUser.role === 'kapster') {
            const match = caps.find((c: any) => c.name.toLowerCase() === currentUser.name.toLowerCase());
@@ -224,7 +222,7 @@ export const SlotManagePage = () => {
       </TitleSection>
 
       <Toolbar>
-        <div className="input-label" style={{ flex: '0 0 240px' }}>
+        <div className="input-label">
           <label><Calendar size={14} /> Tanggal Terpilih</label>
           <input type="date" value={dateFilter} onChange={e=>setDateFilter(e.target.value)} />
         </div>
