@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -133,6 +133,7 @@ const ContentScroller = styled.div`
 
 export const AdminLayout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const profile = { name: currentUser.name, barbershop: currentUser.role === 'kapster' ? 'Pointcut Kapster' : 'Pointcut Staff' };
   const [currentTime, setCurrentTime] = useState(new Date());
   const [notifs] = useState<any[]>([]);
@@ -224,7 +225,7 @@ export const AdminLayout = () => {
               </NotifPopover>
             )}
             
-            <AdminInfo onClick={() => alert(`Profil Admin: ${profile?.name || 'Loading...'}`)}>
+            <AdminInfo onClick={() => navigate('/admin/profile')}>
               <div className="details">
                 <span>{profile?.name || 'Super Admin'}</span>
                 <small>{profile?.barbershop || 'BarberFlow Staff'}</small>
